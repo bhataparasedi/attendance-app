@@ -402,14 +402,6 @@ function showEditModal(id) {
 
 
 
-  // ✅ These are only valid in async function (now fixed)
-  await loadAttendance();
-  renderTable();
-  generateLiveMonthlyDashboard();
-
-  localStorage.setItem('updated', Date.now());
-}
-
 
 async function deleteStudent(id) {
   if (!confirm('Delete this student?')) return;

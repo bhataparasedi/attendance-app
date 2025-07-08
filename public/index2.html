@@ -121,13 +121,13 @@
     }
 
     async function loadStudents() {
-  const response = await fetch("https://attendance-app-r8y3.onrender.com/students");
+  const response = await fetch("https://attendance-app-r8y3.onrender.com/api/students");
   students = await response.json();
 }
 
 
   async function loadAttendance() {
-  const response = await fetch("https://attendance-app-r8y3.onrender.com/attendance");
+  const response = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
   const serverData = await response.json();
 
   attendance = {};

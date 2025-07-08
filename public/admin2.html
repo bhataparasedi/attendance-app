@@ -218,7 +218,7 @@ async function saveAttendance() {
     records: attendance
   };
 
-  if (data.length) {
+  if (data.length && data[0].id) {
     // Update existing
     await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
       method: 'PUT',
@@ -234,11 +234,13 @@ async function saveAttendance() {
     });
   }
 
-  await loadAttendance();           // ✅ This makes admin reload updated attendance
-  renderTable();                    // ✅ This updates the attendance table
-  generateLiveMonthlyDashboard();   // ✅ This updates monthly dashboard
-  localStorage.setItem('updated', Date.now()); // Optional trigger
+  await loadAttendance();
+  renderTable();
+  generateLiveMonthlyDashboard();
+
+  localStorage.setItem('updated', Date.now());
 }
+
 
 
 
@@ -409,7 +411,7 @@ function closeModal() {
   };
 
   if (data.length) {
-    await fetch(`https://attendance-app-r8y3.onrender.com/attendance/${data[0].id}`, {
+await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

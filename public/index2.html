@@ -169,8 +169,27 @@
 
 
     function renderStudentCards() {
-      const container = document.getElementById('studentCards');
-      container.innerHTML = '';
+  const container = document.getElementById('studentCards');
+  container.innerHTML = '';
+
+  students.forEach(student => {
+    const card = document.createElement('div');
+    const isPresent = attendance[student.id]?.[todayDate];
+    const photoUrl = student.photo || `https://i.pravatar.cc/100?u=${student.id}`;
+
+    card.className = 'card ' + (isPresent ? 'present' : 'absent');
+
+    card.innerHTML = `
+      <img src="${photoUrl}" alt="${student.name}" />
+      <h3>${student.name}</h3>
+      <p>ID: ${student.id}</p>
+      <p>📞 ${student.mobile}</p>
+      <p><strong>Status Today:</strong> ${isPresent ? '✅ Present' : '❌ Absent'}</p>
+    `;
+    container.appendChild(card);
+  });
+}
+
 
       students.forEach(student => {
         const card = document.createElement('div');

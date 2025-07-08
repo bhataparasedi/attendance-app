@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+  <meta charset="UTF-8" />
+  <title>Admin Panel with QR Attendance</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
+    h2, h3, h4 { margin-bottom: 10px; }
+    #loginDiv, #adminContent {
+      max-width: 1000px; margin: auto; background: white;
+      padding: 20px; border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input[type="password"], input[type="text"], input[type="date"], input[type="month"], select {
+      padding: 8px; width: calc(100% - 18px); margin-bottom: 10px; font-size: 16px;
+    }
+    button {
+      padding: 10px 16px; font-size: 16px; cursor: pointer;
+      border-radius: 4px; border: none; background: #007bff; color: white; margin-right: 10px;
+    }
+    button:hover { background: #0056b3; }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd; padding: 10px; text-align: center;
+    }
+    th { background: #007bff; color: white; }
+    .present { background-color: #d4edda; }
+    .absent { background-color: #f8d7da; }
+    .toggle-btn, .edit-btn, .delete-btn {
+      padding: 5px 10px; font-size: 14px; margin: 2px;
+      border-radius: 4px; border: none; cursor: pointer;
+    }
+    .toggle-btn { background: #28a745; color: white; }
+    .edit-btn { background: #ffc107; color: black; }
+    .delete-btn { background: #dc3545; color: white; }
+    .toggle-btn:hover { background: #218838; }
+    .edit-btn:hover { background: #e0a800; }
+    .delete-btn:hover { background: #c82333; }
+    #logoutBtn { background: #6c757d; margin-top: 15px; }
+    #logoutBtn:hover { background: #5a6268; }
+    #liveDashboardTable td:hover { filter: brightness(0.95); cursor: pointer; }
+    #liveDashboardContainer { overflow-x: auto; }
+    #qrModal, #modalOverlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; display: none;
+      z-index: 9999;
+    }
+    #qrModalContent, #modal {
+      background: white; padding: 20px; border-radius: 8px;
+      width: 300px; max-width: 95%;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginDiv">
+  <h2>Admin Login</h2>
+  <input type="password" id="adminPass" placeholder="Enter Admin Password" />
+  <button onclick="checkPassword()">Login</button>
+  <p id="loginMsg" style="color:red;"></p>
+</div>
+
+<div id="adminContent" style="display:none;">
+  <h2>Admin Attendance Dashboard</h2>
+  <div id="dateDisplay"></div>
+  <button onclick="showAddModal()">➕ Add New Student</button>
+
+  <h3>📲 QR Code Generator</h3>
+<button onclick="generateAllQRCodes()">Generate All Student QR Codes</button>
+<button onclick="downloadAllQRAsPDF()">⬇️ Download All QR PDF</button>
+
+<button onclick="showIndividualQRModal()">Generate Individual QR</button>
+<div id="qrCodeContainer" style="margin-top: 20px;"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Mobile</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="attendanceTableBody"></tbody>
+  </table>
+
+  <h3>📤 Export Attendance By Date</h3>
+  <input type="date" id="exportDate" />
+  <button onclick="exportAttendanceByDate()">Export</button>
+
+  <h3>📊 Monthly Attendance Summary</h3>
+  <input type="month" id="monthPicker" />
+  <button onclick="generateMonthlyReport()">Generate</button>
+  <button onclick="exportMonthlyCSV()">Export Monthly CSV</button>
+  <table id="monthlyTable" style="display:none;">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Present Days</th><th>Total Days</th><th>Attendance %</th></tr>
+    </thead>
+    <tbody id="monthlyTableBody"></tbody>
+  </table>
+
+  <h3>📅 Live Monthly Attendance Dashboard (Click to Edit)</h3>
+  <div id="liveDashboardContainer">
+    <table id="liveDashboardTable" style="min-width: 1000px;">
+      <thead id="liveTableHead"></thead>
+      <tbody id="liveTableBody"></tbody>
+    </table>
+  </div>
+
+  <button id="logoutBtn" onclick="logout()">Logout</button>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="modalOverlay">
+  <div id="modal">
+    <h3 id="modalTitle">Add Student</h3>
+    <input type="text" id="studentIdInput" placeholder="Student ID (unique)" />
+    <input type="text" id="studentNameInput" placeholder="Student Name" />
+    <input type="text" id="studentMobileInput" placeholder="Mobile Number" />
+    <div style="text-align:right; margin-top:10px;">
+      <button onclick="closeModal()">Cancel</button>
+      <button onclick="saveStudent()">Save</button>
+    </div>
+    <p id="modalErrorMsg" style="color:red;"></p>
+  </div>
+</div>
+
+<!-- Individual QR Modal -->
+<div id="qrModal">
+  <div id="qrModalContent">
+    <h3>Generate Individual QR</h3>
+    <select id="studentQRSelect"></select>
+    <button onclick="generateStudentQR()">Generate</button>
+    <button onclick="closeQRModal()" style="margin-top:10px;">Close</button>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = 'teacher123';
+let students = [];
+let attendance = {};
+let todayDate = new Date().toISOString().split('T')[0];
+let editingStudentId = null;
+
+function checkPassword() {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === ADMIN_PASSWORD) {
+    document.getElementById('loginDiv').style.display = 'none';
+    document.getElementById('adminContent').style.display = 'block';
+    initAdmin();
+  } else {
+    document.getElementById('loginMsg').textContent = 'Incorrect password!';
+  }
+}
+
+function logout() {
+  document.getElementById('adminContent').style.display = 'none';
+  document.getElementById('loginDiv').style.display = 'block';
+  document.getElementById('adminPass').value = '';
+}
+
+async function loadStudents() {
+  const res = await fetch('http://localhost:3000/students');
+  students = await res.json();
+}
+
+
+async function saveStudent() {
+  const id = document.getElementById('studentIdInput').value.trim();
+  const name = document.getElementById('studentNameInput').value.trim();
+  const mobile = document.getElementById('studentMobileInput').value.trim();
+  const msg = document.getElementById('modalErrorMsg');
+  if (!id || !name) return msg.textContent = 'ID and Name are required.';
+
+  const payload = { id, name, mobile };
+
+  if (editingStudentId) {
+    await fetch(`http://localhost:3000/students/${editingStudentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } else {
+    await fetch(`http://localhost:3000/students`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  closeModal();
+  initAdmin();
+}
+
+
+async function loadAttendance() {
+  const res = await fetch(`http://localhost:3000/attendance?date=${todayDate}`);
+  const data = await res.json();
+  if (data.length) {
+    attendance = data[0].records || {};
+  } else {
+    attendance = {};
+  }
+}
+async function saveAttendance() {
+  const res = await fetch(`http://localhost:3000/attendance?date=${todayDate}`);
+  const data = await res.json();
+
+  const payload = {
+    date: todayDate,
+    records: attendance
+  };
+
+  if (data.length) {
+    // Update existing
+    await fetch(`http://localhost:3000/attendance/${data[0].id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } else {
+    // Create new
+    await fetch(`http://localhost:3000/attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  localStorage.setItem('updated', Date.now()); // Optional trigger
+}
+
+function renderTable() {
+  const tbody = document.getElementById('attendanceTableBody');
+  tbody.innerHTML = '';
+  students.forEach(student => {
+    const time = attendance[student.id];
+    const tr = document.createElement('tr');
+    tr.className = time ? 'present' : 'absent';
+    tr.innerHTML = `
+      <td>${student.id}</td>
+      <td>${student.name}</td>
+      <td>${student.mobile || ''}</td>
+      <td>${time ? 'Present at ' + time : 'Absent'}</td>
+      <td>
+        <button class="toggle-btn" onclick="toggleAttendance('${student.id}')">Mark ${time ? 'Absent' : 'Present'}</button>
+        <button class="edit-btn" onclick="showEditModal('${student.id}')">Edit</button>
+        <button class="delete-btn" onclick="deleteStudent('${student.id}')">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('dateDisplay').textContent = `Date: ${todayDate}`;
+}
+
+function toggleAttendance(id) {
+  if (attendance[id]) delete attendance[id];
+  else attendance[id] = new Date().toLocaleTimeString('en-GB', { hour12: false });
+  saveAttendance();
+  renderTable();
+  generateLiveMonthlyDashboard();
+}
+
+function exportAttendanceByDate() {
+  const date = document.getElementById('exportDate').value;
+  if (!date) return alert('Please select a date.');
+  //const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  //const att = all[date];
+  if (!att) return alert('No data for this date.');
+  const rows = [['ID', 'Name', 'Mobile', 'Status', 'Time', 'Date']];
+  students.forEach(s => {
+    const time = att[s.id] || '';
+    const status = time ? 'Present' : 'Absent';
+    rows.push([s.id, s.name, s.mobile || '', status, time, date]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `attendance_${date}.csv`;
+  a.click();
+}
+
+function generateMonthlyReport() {
+  const monthInput = document.getElementById('monthPicker').value;
+  if (!monthInput) return alert('Please select a month.');
+  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  const [year, month] = monthInput.split('-');
+  const filteredDates = Object.keys(all).filter(d => d.startsWith(`${year}-${month}`));
+  const tbody = document.getElementById('monthlyTableBody');
+  tbody.innerHTML = '';
+  students.forEach(s => {
+    let present = 0;
+    filteredDates.forEach(d => { if (all[d]?.[s.id]) present++; });
+    const total = filteredDates.length;
+    const percent = total ? ((present / total) * 100).toFixed(1) : '0.0';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.id}</td><td>${s.name}</td><td>${present}</td><td>${total}</td><td>${percent}%</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('monthlyTable').style.display = 'table';
+}
+
+function exportMonthlyCSV() {
+  const table = document.getElementById('monthlyTableBody');
+  if (!table.rows.length) return alert('Generate report first.');
+  const rows = [['ID', 'Name', 'Present Days', 'Total Days', 'Attendance %']];
+  for (let row of table.rows) {
+    rows.push([...row.cells].map(c => c.textContent));
+  }
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  const month = document.getElementById('monthPicker').value || 'monthly';
+  a.href = URL.createObjectURL(blob);
+  a.download = `attendance_summary_${month}.csv`;
+  a.click();
+}
+
+function generateLiveMonthlyDashboard() {
+  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  const now = new Date(), year = now.getFullYear(), month = now.getMonth();
+  const days = new Date(year, month + 1, 0).getDate();
+  const dates = [...Array(days)].map((_, d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d + 1).padStart(2, '0')}`);
+  document.getElementById('liveTableHead').innerHTML = `<tr><th>Student</th>${dates.map(d => `<th>${new Date(d).getDate()}</th>`).join('')}</tr>`;
+  const body = document.getElementById('liveTableBody');
+  body.innerHTML = '';
+  students.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${s.name}</td>` + dates.map(d => {
+      const present = all[d]?.[s.id];
+      return `<td onclick="toggleAttendanceForDate('${s.id}', '${d}')" style="background:${present ? '#d4edda' : '#f8d7da'};">${present ? '✅' : '❌'}</td>`;
+    }).join('');
+    body.appendChild(tr);
+  });
+}
+
+function toggleAttendanceForDate(id, date) {
+  // Update old format
+  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  if (!all[date]) all[date] = {};
+  if (all[date][id]) delete all[date][id];
+  else all[date][id] = new Date().toLocaleTimeString('en-GB', { hour12: false });
+  //localStorage.setItem('allAttendance', JSON.stringify(all));
+
+  // ✅ Update new format used by index.html
+  const yyyy_mm = date.slice(0, 7);
+  const attKey = 'attendance_' + yyyy_mm;
+  const attendanceData = JSON.parse(localStorage.getItem(attKey) || '{}');
+
+  if (!attendanceData[id]) attendanceData[id] = {};
+  if (all[date][id]) {
+    attendanceData[id][date] = all[date][id];  // mark present
+  } else {
+    delete attendanceData[id][date]; // mark absent
+  }
+
+  localStorage.setItem(attKey, JSON.stringify(attendanceData));
+
+  // Optional: sync trigger
+  localStorage.setItem('updated', Date.now());
+
+  generateLiveMonthlyDashboard();
+}
+
+function showAddModal() {
+  editingStudentId = null;
+  document.getElementById('modalTitle').textContent = 'Add Student';
+  document.getElementById('studentIdInput').value = '';
+  document.getElementById('studentIdInput').disabled = false;
+  document.getElementById('studentNameInput').value = '';
+  document.getElementById('studentMobileInput').value = '';
+  document.getElementById('modalErrorMsg').textContent = '';
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function showEditModal(id) {
+  const s = students.find(s => s.id === id);
+  if (!s) return alert('Student not found');
+  editingStudentId = id;
+  document.getElementById('modalTitle').textContent = 'Edit Student';
+  document.getElementById('studentIdInput').value = s.id;
+  document.getElementById('studentIdInput').disabled = true;
+  document.getElementById('studentNameInput').value = s.name;
+  document.getElementById('studentMobileInput').value = s.mobile;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').style.display = 'none';
+}
+
+function saveStudent() {
+  const id = document.getElementById('studentIdInput').value.trim();
+  const name = document.getElementById('studentNameInput').value.trim();
+  const mobile = document.getElementById('studentMobileInput').value.trim();
+  const msg = document.getElementById('modalErrorMsg');
+  if (!id || !name) return msg.textContent = 'ID and Name are required.';
+  if (!editingStudentId && students.find(s => s.id === id)) return msg.textContent = 'ID already exists.';
+  if (editingStudentId) {
+    const s = students.find(s => s.id === editingStudentId);
+    s.name = name; s.mobile = mobile;
+  } else {
+    students.push({ id, name, mobile });
+  }
+  saveStudents();
+  closeModal();
+  renderTable();
+  generateLiveMonthlyDashboard();
+}
+async function loadAllAttendance() {
+  const res = await fetch('http://localhost:3000/attendance');
+  return await res.json();
+}
+
+async function deleteStudent(id) {
+  if (!confirm('Delete this student?')) return;
+  await fetch(`http://localhost:3000/students/${id}`, { method: 'DELETE' });
+  initAdmin();
+}
+
+function generateAllQRCodes() {
+  if (!students.length) return alert('No students found.');
+
+  const container = document.getElementById('qrCodeContainer');
+  container.innerHTML = '<h4>All Student QR Codes</h4>';
+
+  students.forEach(s => {
+    const qrData = encodeURIComponent(s.id);
+    const qrURL = `https://api.qrserver.com/v1/create-qr-code/?data=${qrData}&size=120x120`;
+
+    const cleanId = s.id.includes('/') ? s.id.split('/').pop() : s.id;
+
+    const div = document.createElement('div');
+    div.style = 'display:inline-block; text-align:center; margin:10px;';
+    div.innerHTML = `
+      <div><strong>${s.name}</strong><br>ID: ${cleanId}</div>
+      <img src="${qrURL}" id="qr_${cleanId}" alt="QR for ${s.name}" /><br/>
+      <button style="margin-top:5px;" onclick="downloadQR('${qrURL}', 'QR_${cleanId}.png')">⬇️ Download</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function downloadQR(url, filename) {
+  fetch(url)
+    .then(res => res.blob())
+    .then(blob => {
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    });
+}
+
+
+async function downloadAllQRAsPDF() {
+  if (!students.length) return alert('No students found.');
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+  let perRow = 3;
+  let rowsPerPage = 4;
+  let qrSize = 120;
+  let paddingX = 40;
+  let paddingY = 40;
+  let spacingX = 180;
+  let spacingY = 180;
+
+  let count = 0;
+
+  for (let i = 0; i < students.length; i++) {
+    const s = students[i];
+
+    const qrURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(s.id)}&size=${qrSize}x${qrSize}`;
+    const imgData = await fetch(qrURL).then(r => r.blob()).then(blob => {
+      return new Promise(res => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result);
+        fr.readAsDataURL(blob);
+      });
+    });
+
+    // Calculate X, Y based on index
+    const col = count % perRow;
+    const row = Math.floor((count % (perRow * rowsPerPage)) / perRow);
+    const x = paddingX + col * spacingX;
+    const y = paddingY + row * spacingY;
+
+    doc.addImage(imgData, 'PNG', x, y, qrSize, qrSize);
+    doc.text(`${s.name}`, x, y + qrSize + 15);
+    
+    // Show only last part of ID after last "/"
+    const cleanId = s.id.includes('/') ? s.id.split('/').pop() : s.id;
+    doc.text(`ID: ${cleanId}`, x, y + qrSize + 30);
+
+    count++;
+
+    // Add page every 12 students
+    if (count % (perRow * rowsPerPage) === 0 && i < students.length - 1) {
+      doc.addPage();
+    }
+  }
+
+  doc.save('All_QRCodes.pdf');
+}
+
+
+
+function showIndividualQRModal() {
+  const select = document.getElementById('studentQRSelect');
+  select.innerHTML = '';
+  students.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.name} (${s.id})`;
+    select.appendChild(opt);
+  });
+  document.getElementById('qrModal').style.display = 'flex';
+}
+
+function closeQRModal() {
+  document.getElementById('qrModal').style.display = 'none';
+}
+
+function generateStudentQR() {
+  const id = document.getElementById('studentQRSelect').value;
+  const s = students.find(s => s.id === id);
+  const container = document.getElementById('qrCodeContainer');
+  const qrURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(s.id)}&size=150x150`;
+
+  fetch(qrURL)
+    .then(res => res.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+
+      container.innerHTML = `
+        <h4>QR Code for ${s.name}</h4>
+        <img src="${url}" style="margin-bottom: 10px;" />
+        <p><strong>ID:</strong> ${s.id}</p>
+        <button onclick="downloadBlob('${s.name}', '${s.id}', '${url}')">⬇️ Download QR</button>
+      `;
+    });
+
+  closeQRModal();
+}
+
+async function initAdmin() {
+  await loadStudents();
+  loadAttendance(); // can still use localStorage
+  renderTable();
+  generateLiveMonthlyDashboard();
+}
+
+window.addEventListener('storage', function(e) {
+  if (e.key === 'students' || e.key === 'allAttendance' || e.key === 'updated') {
+    initAdmin(); // re-load attendance & student list
+  }
+});
+function downloadBlob(name, id, blobURL) {
+  const a = document.createElement('a');
+  a.href = blobURL;
+  a.download = `QR_${name.replace(/ /g, "_")}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
+</script>
+</body>
+</html>

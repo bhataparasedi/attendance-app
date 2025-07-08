@@ -420,28 +420,37 @@ function closeModal() {
   document.getElementById('modalOverlay').style.display = 'none';
 }
 
-function saveStudent() {
-  const id = document.getElementById('studentIdInput').value.trim();
-  const name = document.getElementById('studentNameInput').value.trim();
-  const mobile = document.getElementById('studentMobileInput').value.trim();
-  const msg = document.getElementById('modalErrorMsg');
-  if (!id || !name) return msg.textContent = 'ID and Name are required.';
-  if (!editingStudentId && students.find(s => s.id === id)) return msg.textContent = 'ID already exists.';
-  if (editingStudentId) {
-    const s = students.find(s => s.id === editingStudentId);
-    s.name = name; s.mobile = mobile;
+async function saveAttendance() {
+  const res = await fetch(`https://attendance-app-r8y3.onrender.com/attendance?date=${todayDate}`);
+  const data = await res.json();
+
+  const payload = {
+    date: todayDate,
+    records: attendance
+  };
+
+  if (data.length) {
+    await fetch(`https://attendance-app-r8y3.onrender.com/attendance/${data[0].id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
   } else {
-    students.push({ id, name, mobile });
+    await fetch(`https://attendance-app-r8y3.onrender.com/attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
   }
-  saveStudents();
-  closeModal();
+
+  // ✅ These are only valid in async function (now fixed)
+  await loadAttendance();
   renderTable();
   generateLiveMonthlyDashboard();
+
+  localStorage.setItem('updated', Date.now());
 }
-async function loadAllAttendance() {
-const res = await fetch('https://attendance-app-r8y3.onrender.com/api/attendance');
-  return await res.json();
-}
+
 
 async function deleteStudent(id) {
   if (!confirm('Delete this student?')) return;

@@ -120,26 +120,35 @@
       return 'attendance_' + yyyy_mm;
     }
 
-    async function loadStudents() {
-  const response = await fetch("https://attendance-app-r8y3.onrender.com/api/students");
-  students = await response.json();
+   async function loadStudents() {
+  try {
+    const response = await fetch("https://attendance-app-r8y3.onrender.com/api/students");
+    students = await response.json();
+  } catch (e) {
+    alert("⚠️ Failed to load student data.");
+    console.error(e);
+  }
 }
 
+async function loadAttendance() {
+  try {
+    const response = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+    const serverData = await response.json();
 
-  async function loadAttendance() {
-  const response = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
-  const serverData = await response.json();
-
-  attendance = {};
-
-  serverData.forEach(entry => {
-    const { date, records } = entry;
-    Object.entries(records).forEach(([studentId, time]) => {
-      if (!attendance[studentId]) attendance[studentId] = {};
-      attendance[studentId][date] = time;
+    attendance = {};
+    serverData.forEach(entry => {
+      const { date, records } = entry;
+      Object.entries(records).forEach(([studentId, time]) => {
+        if (!attendance[studentId]) attendance[studentId] = {};
+        attendance[studentId][date] = time;
+      });
     });
-  });
+  } catch (e) {
+    alert("⚠️ Failed to load attendance data.");
+    console.error(e);
+  }
 }
+
 
 async function saveAttendance() {
   const todayDate = new Date().toISOString().split("T")[0];

@@ -141,29 +141,36 @@
   });
 }
 
+async function saveAttendance() {
+  const todayDate = new Date().toISOString().split("T")[0];
 
-   async function saveAttendance() {
-  // Convert local format to server format
+  // Prepare records for today's date
   const dateRecord = {
     date: todayDate,
     records: {},
   };
 
   students.forEach(student => {
-    const att = attendance[student.id]?.[todayDate];
-    if (att) {
-      dateRecord.records[student.id] = att;
+    const attTime = attendance[student.id]?.[todayDate];
+    if (attTime) {
+      dateRecord.records[student.id] = attTime;
     }
   });
 
-  // POST to server (you can also check if date exists first and PATCH)
-  await fetch("https://attendance-app-r8y3.onrender.com/attendance", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dateRecord),
-  });
+  try {
+    // ✅ Corrected endpoint: /api/attendance
+    await fetch("https://attendance-app-r8y3.onrender.com/api/attendance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dateRecord),
+    });
 
-  localStorage.setItem("updated", Date.now()); // for syncing across tabs
+    // ✅ Optional sync trigger
+    localStorage.setItem("updated", Date.now());
+  } catch (error) {
+    console.error("Error saving attendance:", error);
+    alert("⚠️ Failed to save attendance. Please try again.");
+  }
 }
 
 
@@ -313,12 +320,13 @@ function speakText(text) {
   }
 }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadStudents();
-      loadAttendance();
-      renderStudentCards();
-      renderMonthlyTable();
-    });
+ document.addEventListener('DOMContentLoaded', async () => {
+  await loadStudents();
+  await loadAttendance();
+  renderStudentCards();
+  renderMonthlyTable();
+});
+
 document.getElementById('qrInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     markAttendance(this.value);
@@ -326,47 +334,21 @@ document.getElementById('qrInput').addEventListener('keydown', function(e) {
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadStudents();
-  loadAttendance();
-  renderStudentCards();
-  renderMonthlyTable();
-});
-
-// 🔄 Sync with admin.html when localStorage is updated
-window.addEventListener('storage', function(e) {
-  if (e.key === 'students' || e.key.startsWith('attendance_')) {
-    console.log("Detected change from admin. Reloading student data...");
-    loadStudents();
-    loadAttendance();
-    renderStudentCards();
-    renderMonthlyTable();
-  }
-});
-// 🔄 Sync with admin.html when localStorage is updated
-window.addEventListener('storage', function(e) {
-  if (e.key === 'students' || e.key.startsWith('attendance_')) {
-    console.log("Detected change from admin. Reloading student data...");
-    loadStudents();
-    loadAttendance();
-    renderStudentCards();
-    renderMonthlyTable();
-  }
-});
-// 🔄 Sync with admin.html when localStorage is updated
-window.addEventListener('storage', function(e) {
+window.addEventListener('storage', async function(e) {
   if (
     e.key === 'students' ||
     e.key.startsWith('attendance_') ||
     e.key === 'updated'
   ) {
     console.log("🔁 Change detected from admin panel. Reloading data...");
-    loadStudents();
-    loadAttendance();
+    await loadStudents();
+    await loadAttendance();
     renderStudentCards();
     renderMonthlyTable();
   }
 });
+
+
 
 
   </script>

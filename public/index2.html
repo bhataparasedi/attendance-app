@@ -198,22 +198,8 @@ async function saveAttendance() {
 }
 
 
-      students.forEach(student => {
-        const card = document.createElement('div');
-        const isPresent = attendance[student.id]?.[todayDate];
-        card.className = 'card ' + (isPresent ? 'present' : 'absent');
 
-        card.innerHTML = `
-          <img src="${student.photo}" alt="${student.name}" />
-          <h3>${student.name}</h3>
-          <p>ID: ${student.id}</p>
-          <p>📞 ${student.mobile}</p>
-          <p><strong>Status Today:</strong> ${isPresent ? '✅ Present' : '❌ Absent'}</p>
-        `;
-        container.appendChild(card);
-      });
     
-
     function renderMonthlyTable() {
       const container = document.getElementById('monthlyTable');
       container.innerHTML = '';

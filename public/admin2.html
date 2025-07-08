@@ -278,22 +278,33 @@ function toggleAttendance(id) {
 function exportAttendanceByDate() {
   const date = document.getElementById('exportDate').value;
   if (!date) return alert('Please select a date.');
-  //const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-  //const att = all[date];
-  if (!att) return alert('No data for this date.');
-  const rows = [['ID', 'Name', 'Mobile', 'Status', 'Time', 'Date']];
-  students.forEach(s => {
-    const time = att[s.id] || '';
-    const status = time ? 'Present' : 'Absent';
-    rows.push([s.id, s.name, s.mobile || '', status, time, date]);
-  });
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `attendance_${date}.csv`;
-  a.click();
+
+  fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${date}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length === 0) {
+        return alert('No attendance data for ' + date);
+      }
+
+      const records = data[0].records;
+      const rows = [['ID', 'Name', 'Mobile', 'Status', 'Time', 'Date']];
+
+      students.forEach(s => {
+        const time = records[s.id] || '';
+        const status = time ? 'Present' : 'Absent';
+        rows.push([s.id, s.name, s.mobile || '', status, time, date]);
+      });
+
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `attendance_${date}.csv`;
+      a.click();
+    })
+    .catch(err => console.error(err));
 }
+
 
 function generateMonthlyReport() {
   const monthInput = document.getElementById('monthPicker').value;
@@ -316,18 +327,23 @@ function generateMonthlyReport() {
 }
 
 function exportMonthlyCSV() {
-  const table = document.getElementById('monthlyTableBody');
-  if (!table.rows.length) return alert('Generate report first.');
-  const rows = [['ID', 'Name', 'Present Days', 'Total Days', 'Attendance %']];
-  for (let row of table.rows) {
-    rows.push([...row.cells].map(c => c.textContent));
+  const tbody = document.getElementById('monthlyTableBody');
+  if (!tbody || tbody.rows.length === 0) {
+    return alert('Generate report first.');
   }
+  const rows = [['ID','Name','Present Days','Total Days','Attendance %']];
+
+  Array.from(tbody.rows).forEach(row => {
+    const cols = Array.from(row.cells).map(cell => cell.textContent);
+    rows.push(cols);
+  });
+
   const csv = rows.map(r => r.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
-  const month = document.getElementById('monthPicker').value || 'monthly';
+  const month = document.getElementById('monthPicker').value;
   a.href = URL.createObjectURL(blob);
-  a.download = `attendance_summary_${month}.csv`;
+  a.download = `attendance_summary_${month || 'month'}.csv`;
   a.click();
 }
 
@@ -349,33 +365,61 @@ function generateLiveMonthlyDashboard() {
   });
 }
 
-function toggleAttendanceForDate(id, date) {
-  // Update old format
-  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-  if (!all[date]) all[date] = {};
-  if (all[date][id]) delete all[date][id];
-  else all[date][id] = new Date().toLocaleTimeString('en-GB', { hour12: false });
-  //localStorage.setItem('allAttendance', JSON.stringify(all));
+async function toggleAttendanceForDate(studentId, date) {
+  const timeNow = new Date().toLocaleTimeString('en-GB', { hour12: false });
 
-  // ✅ Update new format used by index.html
-  const yyyy_mm = date.slice(0, 7);
-  const attKey = 'attendance_' + yyyy_mm;
-  const attendanceData = JSON.parse(localStorage.getItem(attKey) || '{}');
+  // Load allAttendance from localStorage
+  const allAttendance = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  if (!allAttendance[date]) allAttendance[date] = {};
 
-  if (!attendanceData[id]) attendanceData[id] = {};
-  if (all[date][id]) {
-    attendanceData[id][date] = all[date][id];  // mark present
+  // Toggle presence
+  if (allAttendance[date][studentId]) {
+    delete allAttendance[date][studentId];
   } else {
-    delete attendanceData[id][date]; // mark absent
+    allAttendance[date][studentId] = timeNow;
   }
 
-  localStorage.setItem(attKey, JSON.stringify(attendanceData));
+  // Save locally
+  localStorage.setItem('allAttendance', JSON.stringify(allAttendance));
 
-  // Optional: sync trigger
-  localStorage.setItem('updated', Date.now());
+  // Save to backend
+  await saveAttendanceForDate(date, allAttendance[date]);
 
+  // Update live dashboard
   generateLiveMonthlyDashboard();
 }
+async function saveAttendanceForDate(date, records) {
+  const payload = {
+    date: date,
+    records: records
+  };
+
+  try {
+    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${date}`);
+    const data = await res.json();
+
+    if (data.length && data[0].id) {
+      // Update existing attendance
+      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      // Create new attendance record
+      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    console.log(`Attendance saved for ${date}`);
+  } catch (err) {
+    console.error('Error saving attendance:', err);
+  }
+}
+
 
 function showAddModal() {
   editingStudentId = null;

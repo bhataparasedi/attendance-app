@@ -320,7 +320,14 @@ function speakText(text) {
   await loadAttendance();
   renderStudentCards();
   renderMonthlyTable();
+
+  // 🔁 Auto-save attendance every 60 seconds (backup)
+  setInterval(() => {
+    saveAttendance();
+    console.log("💾 Backup auto-save triggered...");
+  }, 60000);
 });
+
 
 document.getElementById('qrInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {

@@ -210,12 +210,36 @@ const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance
   }
 }
 async function saveAttendance() {
-const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
+  const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
   const data = await res.json();
+
   const payload = {
     date: todayDate,
     records: attendance
   };
+
+  if (data.length) {
+    // Update existing
+    await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } else {
+    // Create new
+    await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  await loadAttendance();           // ✅ This makes admin reload updated attendance
+  renderTable();                    // ✅ This updates the attendance table
+  generateLiveMonthlyDashboard();   // ✅ This updates monthly dashboard
+  localStorage.setItem('updated', Date.now()); // Optional trigger
+}
+
 
   if (data.length) {
     // Update existing

@@ -164,7 +164,7 @@ function logout() {
 }
 
 async function loadStudents() {
-  const res = await fetch('http://localhost:3000/students');
+  const res = await fetch('https://attendance-app-r8y3.onrender.com/students');
   students = await res.json();
 }
 
@@ -179,13 +179,13 @@ async function saveStudent() {
   const payload = { id, name, mobile };
 
   if (editingStudentId) {
-    await fetch(`http://localhost:3000/students/${editingStudentId}`, {
+    await fetch(`https://attendance-app-r8y3.onrender.com/students/${editingStudentId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
   } else {
-    await fetch(`http://localhost:3000/students`, {
+    await fetch(`https://attendance-app-r8y3.onrender.com/students`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -198,7 +198,7 @@ async function saveStudent() {
 
 
 async function loadAttendance() {
-  const res = await fetch(`http://localhost:3000/attendance?date=${todayDate}`);
+  const res = await fetch(`https://attendance-app-r8y3.onrender.com/attendance?date=${todayDate}`);
   const data = await res.json();
   if (data.length) {
     attendance = data[0].records || {};
@@ -207,7 +207,7 @@ async function loadAttendance() {
   }
 }
 async function saveAttendance() {
-  const res = await fetch(`http://localhost:3000/attendance?date=${todayDate}`);
+  const res = await fetch(`https://attendance-app-r8y3.onrender.com/attendance?date=${todayDate}`);
   const data = await res.json();
 
   const payload = {
@@ -217,14 +217,14 @@ async function saveAttendance() {
 
   if (data.length) {
     // Update existing
-    await fetch(`http://localhost:3000/attendance/${data[0].id}`, {
+    await fetch(`https://attendance-app-r8y3.onrender.com/attendance/${data[0].id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
   } else {
     // Create new
-    await fetch(`http://localhost:3000/attendance`, {
+    await fetch(`https://attendance-app-r8y3.onrender.com/attendance`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -413,13 +413,13 @@ function saveStudent() {
   generateLiveMonthlyDashboard();
 }
 async function loadAllAttendance() {
-  const res = await fetch('http://localhost:3000/attendance');
+  const res = await fetch('https://attendance-app-r8y3.onrender.com/attendance');
   return await res.json();
 }
 
 async function deleteStudent(id) {
   if (!confirm('Delete this student?')) return;
-  await fetch(`http://localhost:3000/students/${id}`, { method: 'DELETE' });
+  await fetch(`https://attendance-app-r8y3.onrender.com/students/${id}`, { method: 'DELETE' });
   initAdmin();
 }
 

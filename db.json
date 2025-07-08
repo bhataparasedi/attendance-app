@@ -1,0 +1,25 @@
+{
+  "students": [
+    { "id": "BYT/RSA-01/2025_26/1", "name": "Aadrsh Tandan", "mobile": "7974341601" },
+    { "id": "BYT/RSA-01/2025_26/2", "name": "Aradhna Kurre", "mobile": "6262635774" },
+    { "id": "BYT/RSA-01/2025_26/3", "name": "Akash Mishra", "mobile": "9131581874" },
+    { "id": "BYT/RSA-01/2025_26/4", "name": "Anamika Kol", "mobile": "9343554306" },
+    { "id": "BYT/RSA-01/2025_26/5", "name": "Dolly Mishra", "mobile": "9329156234" },
+    { "id": "BYT/RSA-01/2025_26/6", "name": "Garima Singh", "mobile": "8889970858" },
+    { "id": "BYT/RSA-01/2025_26/7", "name": "Jhamni Bhatt", "mobile": "9202230430" },
+    { "id": "BYT/RSA-01/2025_26/8", "name": "Kuldeep Sahu", "mobile": "7566002928" },
+    { "id": "BYT/RSA-01/2025_26/9", "name": "Manish Dahariya", "mobile": "6265113720" },
+    { "id": "BYT/RSA-01/2025_26/10", "name": "Nandhni Tandan", "mobile": "6267443636" },
+    { "id": "BYT/RSA-01/2025_26/11", "name": "Pooja Kumari Dewangan", "mobile": "8878458745" },
+    { "id": "BYT/RSA-01/2025_26/12", "name": "Pushpa Kurre", "mobile": "9340098852" },
+    { "id": "BYT/RSA-01/2025_26/13", "name": "Purnima Tandan", "mobile": "6265997055" },
+    { "id": "BYT/RSA-01/2025_26/14", "name": "Rabiya Basree", "mobile": "8435679817" },
+    { "id": "BYT/RSA-01/2025_26/15", "name": "Rani Laxmi Sahu", "mobile": "9644742772" },
+    { "id": "BYT/RSA-01/2025_26/16", "name": "Rashmi Masih", "mobile": "9691574110" },
+    { "id": "BYT/RSA-01/2025_26/17", "name": "Ranjana Mahilange", "mobile": "9691469290" },
+    { "id": "BYT/RSA-01/2025_26/18", "name": "Sandhya Ghritre", "mobile": "8871316590" },
+    { "id": "BYT/RSA-01/2025_26/19", "name": "Soni Dhruw", "mobile": "7869186194" },
+    { "id": "BYT/RSA-01/2025_26/20", "name": "Varsha Manhare", "mobile": "9202649805" }
+  ],
+  "attendance": []
+}

@@ -151,37 +151,54 @@ async function loadAttendance() {
 
 
 async function saveAttendance() {
-  const todayDate = new Date().toISOString().split("T")[0];
-
-  // Prepare records for today's date
-  const dateRecord = {
-    date: todayDate,
-    records: {},
-  };
+  // Loop through all attendance dates
+  const dates = new Set();
 
   students.forEach(student => {
-    const attTime = attendance[student.id]?.[todayDate];
-    if (attTime) {
-      dateRecord.records[student.id] = attTime;
+    if (attendance[student.id]) {
+      Object.keys(attendance[student.id]).forEach(date => dates.add(date));
     }
   });
 
-  try {
-    // ✅ Corrected endpoint: /api/attendance
-    await fetch("https://attendance-app-r8y3.onrender.com/api/attendance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dateRecord),
+  for (let date of dates) {
+    const payload = {
+      date: date,
+      records: {}
+    };
+
+    students.forEach(student => {
+      const time = attendance[student.id]?.[date];
+      if (time) {
+        payload.records[student.id] = time;
+      }
     });
 
-    // ✅ Optional sync trigger
-    localStorage.setItem("updated", Date.now());
-  } catch (error) {
-    console.error("Error saving attendance:", error);
-    alert("⚠️ Failed to save attendance. Please try again.");
-  }
-}
+    try {
+      const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${date}`);
+      const data = await res.json();
 
+      if (data.length && data[0].id) {
+        // Update existing
+        await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Create new
+        await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    } catch (error) {
+      console.error(`Failed to save for ${date}:`, error);
+    }
+  }
+
+  localStorage.setItem("updated", Date.now());
+}
 
 
     function renderStudentCards() {

@@ -331,22 +331,34 @@ function exportAttendanceByDate() {
 function generateMonthlyReport() {
   const monthInput = document.getElementById('monthPicker').value;
   if (!monthInput) return alert('Please select a month.');
+  
   const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
   const [year, month] = monthInput.split('-');
-  const filteredDates = Object.keys(all).filter(d => d.startsWith(`${year}-${month}`));
+  
+  // Filter out Sundays
+  const filteredDates = Object.keys(all).filter(d => {
+    return d.startsWith(`${year}-${month}`) && new Date(d).getDay() !== 0;  // Sunday = 0
+  });
+
   const tbody = document.getElementById('monthlyTableBody');
   tbody.innerHTML = '';
+
   students.forEach(s => {
     let present = 0;
-    filteredDates.forEach(d => { if (all[d]?.[s.id]) present++; });
+    filteredDates.forEach(d => {
+      if (all[d]?.[s.id]) present++;
+    });
     const total = filteredDates.length;
     const percent = total ? ((present / total) * 100).toFixed(1) : '0.0';
+
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${s.id}</td><td>${s.name}</td><td>${present}</td><td>${total}</td><td>${percent}%</td>`;
     tbody.appendChild(tr);
   });
+
   document.getElementById('monthlyTable').style.display = 'table';
 }
+
 
 function exportMonthlyCSV() {
   const tbody = document.getElementById('monthlyTableBody');

@@ -209,45 +209,55 @@ async function saveAttendance() {
 
 
     
-    function renderMonthlyTable() {
-      const container = document.getElementById('monthlyTable');
-      container.innerHTML = '';
+   function renderMonthlyTable() {
+  const container = document.getElementById('monthlyTable');
+  container.innerHTML = '';
 
-      const table = document.createElement('table');
-      table.className = 'student-table';
+  const table = document.createElement('table');
+  table.className = 'student-table';
 
-      // Header Row
-      let header = `<tr><th>Name</th><th>ID</th>`;
-      for (let d = 1; d <= daysInMonth; d++) {
-        header += `<th>${d}</th>`;
-      }
-      header += `<th>✅ Present</th><th>❌ Absent</th><th>📆 Total</th></tr>`;
-      table.innerHTML += header;
-
-      // Student Rows
-      students.forEach(student => {
-        let row = `<tr><td>${student.name}</td><td>${student.id}</td>`;
-        let presentCount = 0;
-
-        for (let d = 1; d <= daysInMonth; d++) {
-          const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
-          const marked = attendance[student.id]?.[dateKey];
-          if (marked) {
-            row += `<td class="present-cell">✔</td>`;
-            presentCount++;
-          } else {
-            row += `<td class="absent-cell">✘</td>`;
-          }
-        }
-
-        const total = today.getDate();
-        const absent = total - presentCount;
-        row += `<td>${presentCount}</td><td>${absent}</td><td>${total}</td></tr>`;
-        table.innerHTML += row;
-      });
-
-      container.appendChild(table);
+  // Header Row
+  let header = `<tr><th>Name</th><th>ID</th>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(`${yyyy_mm}-${String(d).padStart(2, '0')}`);
+    const isSunday = dateObj.getDay() === 0;
+    if (!isSunday) {
+      header += `<th>${d}</th>`;
     }
+  }
+  header += `<th>✅ Present</th><th>❌ Absent</th><th>📆 Total</th></tr>`;
+  table.innerHTML += header;
+
+  // Student Rows
+  students.forEach(student => {
+    let row = `<tr><td>${student.name}</td><td>${student.id}</td>`;
+    let presentCount = 0;
+    let total = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
+      const dateObj = new Date(dateKey);
+      const isSunday = dateObj.getDay() === 0;
+
+      if (!isSunday) {
+        total++;
+        const marked = attendance[student.id]?.[dateKey];
+        if (marked) {
+          row += `<td class="present-cell">✔</td>`;
+          presentCount++;
+        } else {
+          row += `<td class="absent-cell">✘</td>`;
+        }
+      }
+    }
+
+    const absent = total - presentCount;
+    row += `<td>${presentCount}</td><td>${absent}</td><td>${total}</td></tr>`;
+    table.innerHTML += row;
+  });
+
+  container.appendChild(table);
+}
 
     function markAttendance(id) {
   const cleanId = id.trim().toUpperCase();

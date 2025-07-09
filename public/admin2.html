@@ -702,13 +702,14 @@ async function uploadStudentPhoto(studentId, file) {
   const formData = new FormData();
   formData.append('photo', file);
 
+  const encodedId = encodeURIComponent(studentId);
+
   try {
-    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${studentId}/uploadPhoto`, {
+    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodedId}/uploadPhoto`, {
       method: 'POST',
       body: formData
     });
 
-    // Instead of assuming JSON, check response type
     const text = await res.text();
     try {
       const data = JSON.parse(text);
@@ -717,12 +718,13 @@ async function uploadStudentPhoto(studentId, file) {
       alert('Photo uploaded successfully!');
     }
 
-    initAdmin(); // reload updated student list
+    initAdmin();
   } catch (err) {
     console.error('Upload failed', err);
     alert('Photo upload failed.');
   }
 }
+
 
 
 

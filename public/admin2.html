@@ -69,6 +69,11 @@
 
 <div id="adminContent" style="display:none;">
   <h2>Admin Attendance Dashboard</h2>
+  <div style="margin-bottom: 15px;">
+  <label for="viewDate"><strong>📅 View Attendance By Date:</strong></label>
+  <input type="date" id="viewDate" onchange="viewAttendanceByDate()" />
+</div>
+
   <div id="dateDisplay"></div>
   <button onclick="showAddModal()">➕ Add New Student</button>
 
@@ -201,14 +206,23 @@ await fetch(`https://attendance-app-r8y3.onrender.com/api/students`, {
 
 
 async function loadAttendance() {
-const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
-  const data = await res.json();
-  if (data.length) {
-    attendance = data[0].records || {};
-  } else {
-    attendance = {};
+  try {
+    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`);
+    const data = await res.json();
+
+    // Save all attendance by date to localStorage
+    const all = {};
+    data.forEach(entry => {
+      all[entry.date] = entry.records;
+    });
+
+    localStorage.setItem('allAttendance', JSON.stringify(all)); // store for report & dashboard
+    attendance = all[todayDate] || {}; // today's data for table
+  } catch (e) {
+    console.error("⚠️ Error loading attendance:", e);
   }
 }
+
 async function saveAttendance() {
   const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
   const data = await res.json();
@@ -273,6 +287,14 @@ function toggleAttendance(id) {
   saveAttendance();
   renderTable();
   generateLiveMonthlyDashboard();
+}
+function viewAttendanceByDate() {
+  const date = document.getElementById('viewDate').value;
+  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  attendance = all[date] || {};
+  todayDate = date;
+  renderTable(); // updates the main student table
+  generateLiveMonthlyDashboard(); // refresh monthly grid also
 }
 
 function exportAttendanceByDate() {

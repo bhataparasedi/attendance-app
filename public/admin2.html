@@ -302,11 +302,17 @@ function renderTable() {
       <td>${student.name}</td>
       <td>${student.mobile || ''}</td>
       <td>${time ? 'Present at ' + time : 'Absent'}</td>
-      <td>
-        <button class="toggle-btn" onclick="toggleAttendance('${student.id}')">Mark ${time ? 'Absent' : 'Present'}</button>
-        <button class="edit-btn" onclick="showEditModal('${student.id}')">Edit</button>
-        <button class="delete-btn" onclick="deleteStudent('${student.id}')">Delete</button>
-      </td>
+     <td>
+  <button class="toggle-btn" onclick="toggleAttendance('${student.id}')">Mark ${time ? 'Absent' : 'Present'}</button>
+  <button class="edit-btn" onclick="showEditModal('${student.id}')">Edit</button>
+  <button class="delete-btn" onclick="deleteStudent('${student.id}')">Delete</button>
+  <button class="edit-btn" onclick="triggerPhotoUpload('${student.id}')">📷 Upload Photo</button>
+  <input type="file" id="photoInput_${student.id}" style="display:none" accept="image/*" onchange="uploadStudentPhoto('${student.id}', this.files[0])" />
+</td>
+<td>
+  <img src="${student.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" width="40" height="40" style="border-radius:50%;" />
+</td>
+
     `;
     tbody.appendChild(tr);
   });
@@ -687,6 +693,28 @@ function downloadBlob(name, id, blobURL) {
 setInterval(() => {
   initAdmin(); // ya initIndex(); for index.html
 }, 1000); // refresh every 1 seconds
+function triggerPhotoUpload(studentId) {
+  document.getElementById(`photoInput_${studentId}`).click();
+}
+async function uploadStudentPhoto(studentId, file) {
+  if (!file) return alert("No file selected!");
+
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  try {
+    await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${studentId}/uploadPhoto`, {
+      method: 'POST',
+      body: formData
+    });
+
+    alert('Photo uploaded successfully!');
+    initAdmin(); // reload updated student list
+  } catch (err) {
+    console.error('Upload failed', err);
+    alert('Photo upload failed.');
+  }
+}
 
 
 </script>

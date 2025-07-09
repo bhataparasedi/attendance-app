@@ -709,6 +709,7 @@ async function uploadStudentPhoto(studentId, file) {
     });
 
     alert('Photo uploaded successfully!');
+    localStorage.setItem('updated', Date.now());  // <-- Add this line!
     initAdmin(); // reload updated student list
   } catch (err) {
     console.error('Upload failed', err);

@@ -374,9 +374,12 @@ function generateLiveMonthlyDashboard() {
   const now = new Date(), year = now.getFullYear(), month = now.getMonth();
   const days = new Date(year, month + 1, 0).getDate();
   const dates = [...Array(days)].map((_, d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d + 1).padStart(2, '0')}`);
+
   document.getElementById('liveTableHead').innerHTML = `<tr><th>Student</th>${dates.map(d => `<th>${new Date(d).getDate()}</th>`).join('')}</tr>`;
+
   const body = document.getElementById('liveTableBody');
   body.innerHTML = '';
+
   students.forEach(s => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${s.name}</td>` + dates.map(d => {
@@ -421,14 +424,14 @@ async function saveAttendanceForDate(date, records) {
     const data = await res.json();
 
     if (data.length && data[0].id) {
-      // Update existing attendance
+      // Update existing
       await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     } else {
-      // Create new attendance record
+      // Create new
       await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -438,7 +441,7 @@ async function saveAttendanceForDate(date, records) {
 
     console.log(`Attendance saved for ${date}`);
   } catch (err) {
-    console.error('Error saving attendance:', err);
+    console.error('❌ Error saving attendance:', err);
   }
 }
 

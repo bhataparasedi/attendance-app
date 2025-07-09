@@ -222,6 +222,37 @@ async function loadAttendance() {
     console.error("⚠️ Error loading attendance:", e);
   }
 }
+async function saveAttendanceForDate(date, records) {
+  const payload = {
+    date: date,
+    records: records
+  };
+
+  try {
+    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${date}`);
+    const data = await res.json();
+
+    if (data.length && data[0].id) {
+      // Update
+      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      // Create new
+      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    console.log(`✅ Attendance saved for ${date}`);
+  } catch (err) {
+    console.error('❌ Error saving attendance:', err);
+  }
+}
 
 async function saveAttendance() {
   const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
@@ -620,13 +651,24 @@ function generateStudentQR() {
 
   closeQRModal();
 }
+async function loadAllAttendance() {
+  const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+  const data = await res.json();
+  const all = {};
+  data.forEach(entry => {
+    all[entry.date] = entry.records;
+  });
+  localStorage.setItem('allAttendance', JSON.stringify(all));
+}
 
 async function initAdmin() {
   await loadStudents();
-  await loadAttendance(); // can still use localStorage
+  await loadAttendance(); // today's
+  await loadAllAttendance(); // all dates
   renderTable();
   generateLiveMonthlyDashboard();
 }
+
 
 window.addEventListener('storage', function(e) {
   if (e.key === 'students' || e.key === 'allAttendance' || e.key === 'updated') {

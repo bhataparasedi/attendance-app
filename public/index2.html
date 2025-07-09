@@ -348,13 +348,6 @@ function speakText(text) {
   renderStudentCards();
   renderMonthlyTable();
 
-  // 🔁 Auto-save attendance every 60 seconds (backup)
-  setInterval(() => {
-    saveAttendance();
-    console.log("💾 Backup auto-save triggered...");
-  }, 60000);
-});
-
 
 document.getElementById('qrInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
@@ -376,10 +369,9 @@ window.addEventListener('storage', async function(e) {
     renderMonthlyTable();
   }
 });
-
-
-
-
+  setInterval(() => {
+    loadStudents();  // ये आपकी existing function होनी चाहिए जो students fetch करता है
+  }, 10000); // 10 seconds
   </script>
 </body>
 </html>

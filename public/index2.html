@@ -223,7 +223,7 @@ async function saveAttendance() {
     card.className = 'card ' + (isPresent ? 'present' : 'absent');
 
     card.innerHTML = `
-      <img src="${photoUrl}" alt="${student.name}" />
+     <img src="${student.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" width="40" height="40" style="border-radius:50%;" />
       <h3>${student.name}</h3>
       <p>ID: ${student.id}</p>
       <p>📞 ${student.mobile}</p>

@@ -326,14 +326,38 @@ function toggleAttendance(id) {
   renderTable();
   generateLiveMonthlyDashboard();
 }
-function viewAttendanceByDate() {
+async function viewAttendanceByDate() {
   const date = document.getElementById('viewDate').value;
-  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-  attendance = all[date] || {};
-  todayDate = date;
-  renderTable(); // updates the main student table
-  generateLiveMonthlyDashboard(); // refresh monthly grid also
+  if (!date) {
+    alert('Please select a date.');
+    return;
+  }
+
+  try {
+    // Fetch all attendance data fresh from backend
+    const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+    const data = await res.json();
+
+    const all = {};
+    data.forEach(entry => {
+      all[entry.date] = entry.records;
+    });
+
+    // Update localStorage
+    localStorage.setItem('allAttendance', JSON.stringify(all));
+
+    // Set attendance for selected date
+    attendance = all[date] || {};
+    todayDate = date;
+
+    renderTable();
+    generateLiveMonthlyDashboard();
+  } catch (err) {
+    console.error('Error loading attendance:', err);
+    alert('Failed to load attendance data');
+  }
 }
+
 
 function exportAttendanceByDate() {
   const date = document.getElementById('exportDate').value;
@@ -726,6 +750,19 @@ async function uploadStudentPhoto(studentId, file) {
 }
 
 
+async function refreshAllAttendanceFromBackend() {
+  try {
+    const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+    const data = await res.json();
+    const all = {};
+    data.forEach(entry => {
+      all[entry.date] = entry.records;
+    });
+    localStorage.setItem('allAttendance', JSON.stringify(all));
+  } catch (e) {
+    console.error("Error refreshing all attendance:", e);
+  }
+}
 
 
 </script>

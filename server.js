@@ -6,20 +6,18 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, {
+// Connect MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/attendance_db', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
 .then(() => console.log('✅ MongoDB connected'))
 .catch(err => console.log('❌ MongoDB connection error:', err));
 
-// Mongoose Schemas and Models
-
+// Schemas
 const studentSchema = new mongoose.Schema({
   id: { type: String, unique: true, required: true },
   name: String,
@@ -34,7 +32,7 @@ const attendanceSchema = new mongoose.Schema({
 });
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
-// API Routes
+// API routes
 
 // Get all students
 app.get('/api/students', async (req, res) => {
@@ -75,10 +73,9 @@ app.delete('/api/students/:id', async (req, res) => {
   }
 });
 
-// Get attendance (by date or all)
+// Get attendance by date or all attendance
 app.get('/api/attendance', async (req, res) => {
   const date = req.query.date;
-
   try {
     if (date) {
       const attendance = await Attendance.findOne({ date });
@@ -98,13 +95,11 @@ app.post('/api/attendance', async (req, res) => {
   try {
     const { date, records } = req.body;
     let attendance = await Attendance.findOne({ date });
-
     if (attendance) {
       attendance.records = records;
     } else {
       attendance = new Attendance({ date, records });
     }
-
     await attendance.save();
     res.json({ message: 'Attendance saved' });
   } catch (e) {
@@ -123,10 +118,9 @@ app.put('/api/attendance/:id', async (req, res) => {
   }
 });
 
-// Serve frontend (static files in public)
+// Serve frontend from public folder
 app.use(express.static('public'));
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

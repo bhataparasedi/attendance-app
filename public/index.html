@@ -1,29 +1,157 @@
-const mongoose = require('mongoose');
-const students = require('./db.json').students;  // Make sure db.json in same folder
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>QR Attendance - Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; text-align: center; }
+    #qrInput { font-size: 18px; padding: 10px; width: 300px; margin: 10px auto; border: 1px solid #ccc; }
+    #status { margin-top: 10px; font-weight: bold; height: 24px; }
+    .card { border: 2px solid #ccc; border-radius: 10px; background: white; margin: 10px; padding: 15px; width: 240px; display: inline-block; vertical-align: top; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .card img { width: 80px; height: 80px; border-radius: 50%; }
+    .present { background: #d4edda; border-color: green; }
+    .absent { background: #f8d7da; border-color: red; }
+    .student-table { width: 100%; border-collapse: collapse; margin-top: 30px; overflow-x: auto; }
+    .student-table th, .student-table td { border: 1px solid #ccc; padding: 5px; font-size: 13px; text-align: center; }
+    .student-table th { background: #e9ecef; position: sticky; top: 0; }
+    .present-cell { background: #d4edda; color: green; }
+    .absent-cell { background: #f8d7da; color: red; }
+    button { padding: 10px 20px; margin: 20px 10px; font-size: 16px; cursor: pointer; }
+    #adminLoginLink { display: block; margin-top: 10px; color: blue; text-decoration: underline; font-size: 14px; }
+    @media (max-width: 768px) {
+      .card { width: 90%; }
+      .student-table { font-size: 12px; overflow-x: scroll; display: block; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <h1>📅 Attendance Dashboard</h1>
 
-mongoose.connect('mongodb://localhost:27017/attendance_db', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+  <input type="text" id="qrInput" placeholder="Click here then Scan QR Code ..." autofocus />
+  <div id="status"></div>
 
-const studentSchema = new mongoose.Schema({
-  id: { type: String, unique: true, required: true },
-  name: String,
-  mobile: String,
-  photo: String,
-});
-const Student = mongoose.model('Student', studentSchema);
+  <div id="studentCards"></div>
 
-async function insert() {
-  try {
-    await Student.deleteMany({});  // Clear old data
-    await Student.insertMany(students);
-    console.log('✅ Students inserted successfully');
-  } catch (e) {
-    console.error('❌ Error inserting students:', e);
-  } finally {
-    mongoose.disconnect();
-  }
-}
+  <h2 style="margin-top: 40px;">📊 Monthly Attendance Sheet</h2>
+  <div id="monthlyTable"></div>
 
-insert();
+  <button onclick="exportCSV()">📤 Export Monthly Attendance</button>
+  <a id="adminLoginLink" href="admin2.html">Admin Panel Login</a>
+
+  <script>
+    const BASE_URL = "";
+    let students = [];
+    let attendanceRecords = {}; // { studentId: time }
+    const today = new Date();
+    const yyyy_mm = today.toISOString().slice(0, 7);
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const todayDate = today.toISOString().split("T")[0];
+
+    async function loadStudents() {
+      try {
+        const res = await fetch(`${BASE_URL}/api/students`);
+        students = await res.json();
+      } catch (e) {
+        alert("⚠️ Failed to load students.");
+        console.error(e);
+      }
+    }
+
+    async function loadAttendance() {
+      try {
+        const res = await fetch(`${BASE_URL}/api/attendance?date=${todayDate}`);
+        const data = await res.json();
+        if (data.length > 0) {
+          attendanceRecords = data[0].records || {};
+        } else {
+          attendanceRecords = {};
+        }
+      } catch (e) {
+        console.error("Failed to load attendance", e);
+      }
+    }
+
+    async function saveAttendance() {
+      const payload = { date: todayDate, records: attendanceRecords };
+      try {
+        const res = await fetch(`${BASE_URL}/api/attendance?date=${todayDate}`);
+        const existing = await res.json();
+
+        if (existing.length > 0 && existing[0]._id) {
+          await fetch(`${BASE_URL}/api/attendance/${existing[0]._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        } else {
+          await fetch(`${BASE_URL}/api/attendance`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        }
+      } catch (e) {
+        console.error("Failed to save attendance", e);
+      }
+    }
+
+    function renderStudentCards() {
+      const container = document.getElementById('studentCards');
+      container.innerHTML = '';
+      students.forEach(s => {
+        const present = attendanceRecords[s.id];
+        const card = document.createElement('div');
+        card.className = 'card ' + (present ? 'present' : 'absent');
+        card.innerHTML = `
+          <img src="${s.photo || `https://i.pravatar.cc/100?u=${s.id}`}" alt="photo" />
+          <h3>${s.name}</h3>
+          <p>ID: ${s.id}</p>
+          <p>📞 ${s.mobile}</p>
+          <p><strong>Status Today:</strong> ${present ? '✅ Present' : '❌ Absent'}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function markAttendance(id) {
+      const cleanId = id.trim().toUpperCase();
+      const student = students.find(s => s.id.toUpperCase() === cleanId);
+      const statusDiv = document.getElementById('status');
+      if (!student) {
+        statusDiv.textContent = `⚠️ Unknown ID: ${cleanId}`;
+        statusDiv.style.color = 'red';
+        return;
+      }
+      if (attendanceRecords[cleanId]) {
+        statusDiv.textContent = `${student.name} already marked present.`;
+        statusDiv.style.color = 'orange';
+        return;
+      }
+      const now = new Date().toLocaleTimeString();
+      attendanceRecords[cleanId] = now;
+      await saveAttendance();
+      renderStudentCards();
+      statusDiv.textContent = `✅ ${student.name} marked present at ${now}`;
+      statusDiv.style.color = 'green';
+    }
+
+    function exportCSV() {
+      alert("Export feature coming soon!");
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadStudents();
+      await loadAttendance();
+      renderStudentCards();
+
+      const input = document.getElementById('qrInput');
+      input.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          await markAttendance(input.value);
+          input.value = '';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -48,10 +48,11 @@
     const BASE_URL = "https://attendance-app-5w9d.onrender.com";
 
     let students = [];
-    let attendanceRecords = {}; // { studentId: time }
+    let attendanceRecords = {}; // For today's attendance
+    let monthlyAttendance = {}; // For monthly aggregated attendance
+
     const today = new Date();
     const yyyy_mm = today.toISOString().slice(0, 7);
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const todayDate = today.toISOString().split("T")[0];
 
     async function loadStudents() {
@@ -75,6 +76,35 @@
         }
       } catch (e) {
         console.error("Failed to load attendance", e);
+      }
+    }
+
+    // Load all attendance entries for current month and aggregate by student and date
+    async function loadMonthlyAttendance() {
+      try {
+        const res = await fetch(`${BASE_URL}/api/attendance`);
+        const allAttendance = await res.json();
+
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const yyyy_mm = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+        const monthlyData = {};
+
+        allAttendance.forEach(dayEntry => {
+          if (dayEntry.date.startsWith(yyyy_mm)) {
+            const date = dayEntry.date;
+            for (const [studentId, time] of Object.entries(dayEntry.records || {})) {
+              if (!monthlyData[studentId]) monthlyData[studentId] = {};
+              monthlyData[studentId][date] = time;
+            }
+          }
+        });
+
+        monthlyAttendance = monthlyData;
+      } catch (e) {
+        console.error("Failed to load monthly attendance", e);
+        monthlyAttendance = {};
       }
     }
 
@@ -102,81 +132,80 @@
       }
     }
 
-  function renderStudentCards() {
-  const container = document.getElementById('studentCards');
-  container.innerHTML = '';
-  students.forEach(s => {
-    const present = attendanceRecords[s.id];
+    function renderStudentCards() {
+      const container = document.getElementById('studentCards');
+      container.innerHTML = '';
+      students.forEach(s => {
+        const present = attendanceRecords[s.id];
 
-    const photoUrl = s.photo
-      ? (s.photo.startsWith('http') ? s.photo : `${window.location.origin}${s.photo}`)
-      : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // neutral icon
+        const photoUrl = s.photo
+          ? (s.photo.startsWith('http') ? s.photo : `${window.location.origin}${s.photo}`)
+          : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // neutral icon
 
-    const card = document.createElement('div');
-    card.className = 'card ' + (present ? 'present' : 'absent');
-    card.innerHTML = `
-      <img src="${photoUrl}" alt="photo" width="80" height="80" />
-      <h3>${s.name}</h3>
-      <p>ID: ${s.id}</p>
-      <p>📞 ${s.mobile}</p>
-      <p><strong>Status Today:</strong> ${present ? '✅ Present' : '❌ Absent'}</p>
-    `;
-    container.appendChild(card);
-  });
-}
-function renderMonthlyTable() {
-  const container = document.getElementById('monthlyTable');
-  container.innerHTML = '';
-
-  const table = document.createElement('table');
-  table.className = 'student-table';
-
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const yyyy_mm = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-
-  // Table Header
-  let header = `<tr><th>Name</th><th>ID</th>`;
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateObj = new Date(currentYear, currentMonth, d);
-    if (dateObj.getDay() !== 0) {
-      header += `<th>${d}</th>`;
+        const card = document.createElement('div');
+        card.className = 'card ' + (present ? 'present' : 'absent');
+        card.innerHTML = `
+          <img src="${photoUrl}" alt="photo" width="80" height="80" />
+          <h3>${s.name}</h3>
+          <p>ID: ${s.id}</p>
+          <p>📞 ${s.mobile}</p>
+          <p><strong>Status Today:</strong> ${present ? '✅ Present' : '❌ Absent'}</p>
+        `;
+        container.appendChild(card);
+      });
     }
-  }
-  header += `<th>✅</th><th>❌</th><th>📆 Total</th></tr>`;
-  table.innerHTML += header;
 
-  // Table Body
-  students.forEach(student => {
-    let row = `<tr><td>${student.name}</td><td>${student.id}</td>`;
-    let presentCount = 0;
-    let total = 0;
+    function renderMonthlyTable() {
+      const container = document.getElementById('monthlyTable');
+      container.innerHTML = '';
 
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateObj = new Date(currentYear, currentMonth, d);
-      const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
+      const table = document.createElement('table');
+      table.className = 'student-table';
 
-      if (dateObj.getDay() === 0) continue; // Skip Sundays
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const yyyy_mm = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
 
-      total++;
-      const marked = attendance[student.id]?.[dateKey];
-      if (marked) {
-        row += `<td class="present-cell">✔</td>`;
-        presentCount++;
-      } else {
-        row += `<td class="absent-cell">✘</td>`;
+      // Table Header
+      let header = `<tr><th>Name</th><th>ID</th>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateObj = new Date(currentYear, currentMonth, d);
+        if (dateObj.getDay() !== 0) { // skip Sundays
+          header += `<th>${d}</th>`;
+        }
       }
+      header += `<th>✅</th><th>❌</th><th>📆 Total</th></tr>`;
+      table.innerHTML = header;
+
+      // Table Body
+      students.forEach(student => {
+        let row = `<tr><td>${student.name}</td><td>${student.id}</td>`;
+        let presentCount = 0;
+        let total = 0;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateObj = new Date(currentYear, currentMonth, d);
+          if (dateObj.getDay() === 0) continue; // skip Sunday
+
+          total++;
+          const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
+          const marked = monthlyAttendance[student.id]?.[dateKey];
+          if (marked) {
+            row += `<td class="present-cell">✔</td>`;
+            presentCount++;
+          } else {
+            row += `<td class="absent-cell">✘</td>`;
+          }
+        }
+
+        const absent = total - presentCount;
+        row += `<td>${presentCount}</td><td>${absent}</td><td>${total}</td></tr>`;
+        table.innerHTML += row;
+      });
+
+      container.appendChild(table);
     }
-
-    const absent = total - presentCount;
-    row += `<td>${presentCount}</td><td>${absent}</td><td>${total}</td></tr>`;
-    table.innerHTML += row;
-  });
-
-  container.appendChild(table);
-}
-
 
     async function markAttendance(id) {
       const cleanId = id.trim().toUpperCase();
@@ -201,13 +230,61 @@ function renderMonthlyTable() {
     }
 
     function exportCSV() {
-      alert("Export feature coming soon!");
+      const rows = [];
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const yyyy_mm = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+      const header = ['Name', 'ID'];
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d);
+        if (date.getDay() !== 0) header.push(d);
+      }
+      header.push('Present', 'Absent', 'Total');
+      rows.push(header);
+
+      students.forEach(student => {
+        const row = [student.name, student.id];
+        let presentCount = 0;
+        let total = 0;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const date = new Date(year, month, d);
+          if (date.getDay() === 0) continue;
+
+          const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
+          const marked = monthlyAttendance[student.id]?.[dateKey];
+
+          row.push(marked ? '✔' : '✘');
+          if (marked) presentCount++;
+          total++;
+        }
+
+        row.push(presentCount, total - presentCount, total);
+        rows.push(row);
+      });
+
+      // Convert to CSV
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+
+      // Download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Monthly_Attendance_${yyyy_mm}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadStudents();
       await loadAttendance();
+      await loadMonthlyAttendance();
       renderStudentCards();
+      renderMonthlyTable();
 
       const input = document.getElementById('qrInput');
       input.addEventListener('keydown', async (e) => {

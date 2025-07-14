@@ -38,15 +38,8 @@
       border-radius: 50%;
     }
 
-    .present {
-      background: #d4edda;
-      border-color: green;
-    }
-
-    .absent {
-      background: #f8d7da;
-      border-color: red;
-    }
+    .present { background: #d4edda; border-color: green; }
+    .absent { background: #f8d7da; border-color: red; }
 
     .student-table {
       width: 100%;
@@ -108,7 +101,6 @@
 
   <script>
     const BASE_URL = "https://attendance-app-r8y3.onrender.com";
-
     let students = [];
     let attendance = {};
     const today = new Date();
@@ -116,38 +108,46 @@
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const todayDate = today.toISOString().split("T")[0];
 
-    const res = await fetch(`${BASE_URL}/api/attendance?date=${todayDate}`);
-const data = await res.json();
+    async function loadStudents() {
+      try {
+        const response = await fetch(`${BASE_URL}/api/students`);
+        students = await response.json();
+      } catch (e) {
+        console.error("❌ Failed to load students:", e);
+        alert("⚠️ Failed to load student data.");
+      }
+    }
 
-if (Array.isArray(data)) {
-  if (data.length === 0) {
-    console.warn("📭 No attendance data yet for today.");
-    attendance = {};
-    return;
-  } else {
-    console.error("Expected single object but got array:", data);
-    return;
-  }
-}
+    async function loadAttendance() {
+      try {
+        const res = await fetch(`${BASE_URL}/api/attendance?date=${todayDate}`);
+        const data = await res.json();
 
-if (!data || typeof data !== 'object' || !data.records) {
-  console.error("Invalid attendance data:", data);
-  return;
-}
-
-attendance = data.records || {};
-
+        if (Array.isArray(data)) {
+          if (data.length === 0) {
+            attendance = {};
+          } else {
+            attendance = data[0].records || {};
+          }
+        } else if (data?.records) {
+          attendance = data.records;
+        } else {
+          attendance = {};
+        }
+      } catch (e) {
+        console.error("❌ Failed to load attendance:", e);
+      }
+    }
 
     async function saveAttendance() {
-      const payload = {
-        date: todayDate,
-        records: attendance
-      };
+      const payload = { date: todayDate, records: attendance };
+
       try {
         const res = await fetch(`${BASE_URL}/api/attendance?date=${todayDate}`);
         const existing = await res.json();
-        if (existing?._id) {
-          await fetch(`${BASE_URL}/api/attendance/${existing._id}`, {
+
+        if (Array.isArray(existing) && existing.length > 0 && existing[0]._id) {
+          await fetch(`${BASE_URL}/api/attendance/${existing[0]._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -159,9 +159,10 @@ attendance = data.records || {};
             body: JSON.stringify(payload)
           });
         }
-        console.log(`Attendance saved for ${todayDate}`);
+
+        console.log(`✅ Attendance saved for ${todayDate}`);
       } catch (err) {
-        console.error('❌ Error saving attendance:', err);
+        console.error("❌ Error saving attendance:", err);
       }
     }
 
@@ -169,12 +170,12 @@ attendance = data.records || {};
       const container = document.getElementById('studentCards');
       container.innerHTML = '';
       students.forEach(student => {
-        const card = document.createElement('div');
         const isPresent = attendance[student.id];
         const photoUrl = student.photo || `https://i.pravatar.cc/100?u=${student.id}`;
+        const card = document.createElement('div');
         card.className = 'card ' + (isPresent ? 'present' : 'absent');
         card.innerHTML = `
-          <img src="${photoUrl}" width="40" height="40" style="border-radius:50%;" />
+          <img src="${photoUrl}" width="80" height="80" />
           <h3>${student.name}</h3>
           <p>ID: ${student.id}</p>
           <p>📞 ${student.mobile}</p>
@@ -195,7 +196,7 @@ attendance = data.records || {};
         const dateObj = new Date(`${yyyy_mm}-${String(d).padStart(2, '0')}`);
         if (dateObj.getDay() !== 0) header += `<th>${d}</th>`;
       }
-      header += `<th>✅ Present</th><th>❌ Absent</th><th>📆 Total</th></tr>`;
+      header += `<th>✅</th><th>❌</th><th>📆 Total</th></tr>`;
       table.innerHTML += header;
 
       students.forEach(student => {
@@ -206,6 +207,7 @@ attendance = data.records || {};
           const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
           const dateObj = new Date(dateKey);
           if (dateObj.getDay() === 0) continue;
+
           total++;
           const marked = attendance[student.id]?.[dateKey] || (todayDate === dateKey && attendance[student.id]);
           if (marked) {
@@ -262,13 +264,10 @@ attendance = data.records || {};
       utterance.lang = 'en-US';
       const setVoice = () => {
         const voices = synth.getVoices();
-        const femaleVoice = voices.find(v =>
-          v.name.toLowerCase().includes('female') ||
-          v.name.toLowerCase().includes('woman') ||
+        utterance.voice = voices.find(v =>
           v.name.toLowerCase().includes('zira') ||
           v.name.toLowerCase().includes('karen')
-        );
-        utterance.voice = femaleVoice || voices[0];
+        ) || voices[0];
         synth.speak(utterance);
       };
       if (synth.getVoices().length === 0) {
@@ -297,7 +296,7 @@ attendance = data.records || {};
 
       window.addEventListener('storage', async function(e) {
         if (e.key.startsWith('attendance_') || e.key === 'students') {
-          console.log("🔁 Data updated externally. Reloading...");
+          console.log("🔁 External update. Reloading...");
           await loadStudents();
           await loadAttendance();
           renderStudentCards();

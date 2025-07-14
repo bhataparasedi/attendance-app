@@ -3,6 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,7 +12,29 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Uploads folder setup
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+// Serve uploads statically
+app.use('/uploads', express.static(uploadDir));
+
+// Serve other static files (e.g. frontend)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Multer storage config
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    cb(null, req.params.id + ext);
+  }
+});
+const upload = multer({ storage: storage });
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
@@ -78,8 +102,34 @@ app.delete('/api/students/:id', async (req, res) => {
   }
 });
 
+// Upload photo route
+app.post('/api/students/:id/uploadPhoto', upload.single('photo'), async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const photoUrl = `/uploads/${req.file.filename}`;
+
+    const updatedStudent = await Student.findOneAndUpdate(
+      { id: studentId },
+      { photo: photoUrl },
+      { new: true }
+    );
+
+    if (!updatedStudent) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json({ message: 'Photo uploaded successfully', photoUrl });
+  } catch (err) {
+    console.error('Error uploading photo:', err);
+    res.status(500).json({ error: 'Failed to upload photo' });
+  }
+});
+
 // Get attendance by date or all
-// ✅ FIXED: Get attendance (by date or all)
 app.get('/api/attendance', async (req, res) => {
   const date = req.query.date;
 
@@ -125,8 +175,6 @@ app.put('/api/attendance/:id', async (req, res) => {
     res.status(400).json({ error: e.message });
   }
 });
-
-// Serve frontend (static files served from /public)
 
 // Start server
 app.listen(PORT, () => {

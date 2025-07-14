@@ -360,28 +360,34 @@
   }
 
   // 11. Monthly report generate
-  function generateMonthlyReport() {
-    const monthInput = document.getElementById('monthPicker').value;
-    if (!monthInput) return alert('Please select a month.');
-    const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-    const [year, month] = monthInput.split('-');
-    const filteredDates = Object.keys(all).filter(d => d.startsWith(`${year}-${month}`) && new Date(d).getDay() !== 0);
-    const tbody = document.getElementById('monthlyTableBody');
-    tbody.innerHTML = '';
-    students.forEach(s => {
-      let present = 0;
-      filteredDates.forEach(d => { if (all[d]?.[s.id]) present++; });
-      const total = filteredDates.length;
-      const percent = total ? ((present / total) * 100).toFixed(1) : 0;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${escapeHTML(s.id)}</td><td>${escapeHTML(s.name)}</td>
-        <td>${present}</td><td>${total}</td><td>${percent}%</td>
-      `;
-      tbody.appendChild(tr);
-    });
-    document.getElementById('monthlyTable').style.display = 'table';
-  }
+ function generateMonthlyReport() {
+  const monthInput = document.getElementById('monthPicker').value;
+  if (!monthInput) return alert('Please select a month.');
+  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  const [year, month] = monthInput.split('-');
+
+  // Filter dates for the selected month excluding only Sundays (0)
+  const filteredDates = Object.keys(all).filter(d => {
+    const day = new Date(d).getDay();
+    return d.startsWith(`${year}-${month}`) && day !== 0;  // Exclude only Sundays
+  });
+
+  const tbody = document.getElementById('monthlyTableBody');
+  tbody.innerHTML = '';
+  students.forEach(s => {
+    let present = 0;
+    filteredDates.forEach(d => { if (all[d]?.[s.id]) present++; });
+    const total = filteredDates.length;
+    const percent = total ? ((present / total) * 100).toFixed(1) : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHTML(s.id)}</td><td>${escapeHTML(s.name)}</td>
+      <td>${present}</td><td>${total}</td><td>${percent}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('monthlyTable').style.display = 'table';
+}
 
   // 12. Export monthly CSV
   function exportMonthlyCSV() {

@@ -1,90 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<meta charset="UTF-8" />
-<title>Admin Panel with QR Attendance</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
-  h2, h3, h4 { margin-bottom: 10px; }
-  #loginDiv, #adminContent {
-    max-width: 1000px; margin: auto; background: white;
-    padding: 20px; border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-  input[type="password"], input[type="text"], input[type="date"], input[type="month"], select {
-    padding: 8px; width: calc(100% - 18px); margin-bottom: 10px; font-size: 16px;
-  }
-  button {
-    padding: 10px 16px; font-size: 16px; cursor: pointer;
-    border-radius: 4px; border: none; background: #007bff; color: white; margin-right: 10px;
-    transition: background-color 0.3s ease;
-  }
-  button:hover:enabled { background: #0056b3; }
-  button:disabled { background: #a0a0a0; cursor: not-allowed; }
-  table {
-    width: 100%; border-collapse: collapse; margin-top: 20px;
-  }
-  th, td {
-    border: 1px solid #ddd; padding: 10px; text-align: center;
-  }
-  th { background: #007bff; color: white; }
-  .present { background-color: #d4edda; }
-  .absent { background-color: #f8d7da; }
-  .toggle-btn, .edit-btn, .delete-btn {
-    padding: 5px 10px; font-size: 14px; margin: 2px;
-    border-radius: 4px; border: none; cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  .toggle-btn { background: #28a745; color: white; }
-  .edit-btn { background: #ffc107; color: black; }
-  .delete-btn { background: #dc3545; color: white; }
-  .toggle-btn:hover { background: #218838; }
-  .edit-btn:hover { background: #e0a800; }
-  .delete-btn:hover { background: #c82333; }
-  #logoutBtn { background: #6c757d; margin-top: 15px; }
-  #logoutBtn:hover { background: #5a6268; }
-  #liveDashboardTable td:hover { filter: brightness(0.95); cursor: pointer; }
-  #liveDashboardContainer { overflow-x: auto; }
-  #qrModal, #modalOverlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; display: none;
-    z-index: 9999;
-  }
-  #qrModalContent, #modal {
-    background: white; padding: 20px; border-radius: 8px;
-    width: 300px; max-width: 95%;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Admin Panel with QR Attendance</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f0f2f5;
+    }
+    h2, h3, h4 { margin-bottom: 10px; }
+    #loginDiv, #adminContent {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input[type="password"], input[type="text"], input[type="date"], input[type="month"], select {
+      padding: 8px; width: calc(100% - 18px); margin-bottom: 10px; font-size: 16px;
+    }
+    button {
+      padding: 10px 16px; font-size: 16px; cursor: pointer;
+      border-radius: 4px; border: none; background: #007bff; color: white; margin-right: 10px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover:enabled { background: #0056b3; }
+    button:disabled { background: #a0a0a0; cursor: not-allowed; }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd; padding: 10px; text-align: center;
+    }
+    th { background: #007bff; color: white; }
+    .present { background-color: #d4edda; }
+    .absent { background-color: #f8d7da; }
+    #logoutBtn { background: #6c757d; margin-top: 15px; }
+    #logoutBtn:hover { background: #5a6268; }
+    #qrModal, #modalOverlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; display: none;
+      z-index: 9999;
+    }
+    #qrModalContent, #modal {
+      background: white; padding: 20px; border-radius: 8px;
+      width: 300px; max-width: 95%;
+    }
+  </style>
 </head>
+
 <body>
 
+<!-- 🔐 Login Panel -->
 <div id="loginDiv">
   <h2>Admin Login</h2>
   <input type="password" id="adminPass" placeholder="Enter Admin Password" />
-  <button id="loginBtn" onclick="checkPassword()">Login</button>
+  <button onclick="checkPassword()">Login</button>
   <p id="loginMsg" style="color:red;"></p>
 </div>
 
+<!-- 📋 Admin Dashboard -->
 <div id="adminContent" style="display:none;">
   <h2>Admin Attendance Dashboard</h2>
-  <div style="margin-bottom: 15px;">
-    <label for="viewDate"><strong>📅 View Attendance By Date:</strong></label>
-    <input type="date" id="viewDate" onchange="viewAttendanceByDate()" />
-  </div>
-
+  <!-- View Attendance -->
+  <label for="viewDate"><strong>📅 View Attendance By Date:</strong></label>
+  <input type="date" id="viewDate" onchange="viewAttendanceByDate()" />
   <div id="dateDisplay"></div>
   <button onclick="showAddModal()">➕ Add New Student</button>
 
+  <!-- QR Code Section -->
   <h3>📲 QR Code Generator</h3>
-  <button onclick="generateAllQRCodes()">Generate All Student QR Codes</button>
+  <button onclick="generateAllQRCodes()">Generate All QR Codes</button>
   <button onclick="downloadAllQRAsPDF()">⬇️ Download All QR PDF</button>
-
   <button onclick="showIndividualQRModal()">Generate Individual QR</button>
   <div id="qrCodeContainer" style="margin-top: 20px;"></div>
 
+  <!-- Student Table -->
   <table>
     <thead>
       <tr>
@@ -94,10 +91,12 @@
     <tbody id="attendanceTableBody"></tbody>
   </table>
 
-  <h3>📤 Export Attendance By Date</h3>
+  <!-- Export Attendance -->
+  <h3>📤 Export Attendance</h3>
   <input type="date" id="exportDate" />
   <button onclick="exportAttendanceByDate()">Export</button>
 
+  <!-- Monthly Summary -->
   <h3>📊 Monthly Attendance Summary</h3>
   <input type="month" id="monthPicker" />
   <button onclick="generateMonthlyReport()">Generate</button>
@@ -109,6 +108,7 @@
     <tbody id="monthlyTableBody"></tbody>
   </table>
 
+  <!-- Live Monthly Attendance Table -->
   <h3>📅 Live Monthly Attendance Dashboard (Click to Edit)</h3>
   <div id="liveDashboardContainer">
     <table id="liveDashboardTable" style="min-width: 1000px;">
@@ -120,6 +120,7 @@
   <button id="logoutBtn" onclick="logout()">Logout</button>
 </div>
 
+<!-- 🧾 Add/Edit Student Modal -->
 <div id="modalOverlay">
   <div id="modal">
     <h3 id="modalTitle">Add Student</h3>
@@ -128,12 +129,13 @@
     <input type="text" id="studentMobileInput" placeholder="Mobile Number" />
     <div style="text-align:right; margin-top:10px;">
       <button onclick="closeModal()">Cancel</button>
-      <button id="saveStudentBtn" onclick="saveStudent()">Save</button>
+      <button onclick="saveStudent()">Save</button>
     </div>
     <p id="modalErrorMsg" style="color:red;"></p>
   </div>
 </div>
 
+<!-- 🎯 Individual QR Modal -->
 <div id="qrModal">
   <div id="qrModalContent">
     <h3>Generate Individual QR</h3>
@@ -143,7 +145,10 @@
   </div>
 </div>
 
+<!-- ✅ Logic Script (Already working and optimized in your original) -->
 <script>
+  const BASE_URL = "https://attendance-app-5w9d.onrender.com";
+
 (() => {
   const ADMIN_PASSWORD = 'teacher123';
   let students = [];
@@ -679,8 +684,6 @@ document.getElementById('photoInput').addEventListener('change', (e) => {
 
 })();
 </script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 </body>
 </html>

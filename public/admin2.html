@@ -472,25 +472,38 @@
     if (input) input.click();
   }
 
-  async function uploadStudentPhoto(id, file) {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Only image files allowed');
+  async function uploadStudentPhoto(studentId, file) {
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/students/${studentId}/uploadPhoto`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert('Upload failed: ' + data.error);
       return;
     }
-    const formData = new FormData();
-    formData.append('photo', file);
-    try {
-      await fetch(`https://attendance-app-5w9d.onrender.com/api/students/${encodeURIComponent(id)}/uploadPhoto`, {
-        method: 'POST',
-        body: formData
-      });
-      alert('Photo uploaded successfully');
-      await initAdmin();
-    } catch {
-      alert('Photo upload failed');
-    }
+
+    alert('Photo uploaded successfully!');
+    // Optionally refresh student list or photo display here
+    await loadStudents();
+    renderStudentCards();
+  } catch (e) {
+    alert('Upload error: ' + e.message);
   }
+}
+
+// Example usage: (attach this to your file input change event)
+document.getElementById('photoInput').addEventListener('change', (e) => {
+  const studentId = /* get selected student id */;
+  const file = e.target.files[0];
+  if (file) uploadStudentPhoto(studentId, file);
+});
+
 
   function generateAllQRCodes() {
     const container = document.getElementById('qrCodeContainer');

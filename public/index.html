@@ -118,6 +118,58 @@
     container.appendChild(card);
   });
 }
+function renderMonthlyTable() {
+  const container = document.getElementById('monthlyTable');
+  container.innerHTML = '';
+
+  const table = document.createElement('table');
+  table.className = 'student-table';
+
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const yyyy_mm = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+
+  // Table Header
+  let header = `<tr><th>Name</th><th>ID</th>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(currentYear, currentMonth, d);
+    if (dateObj.getDay() !== 0) {
+      header += `<th>${d}</th>`;
+    }
+  }
+  header += `<th>✅</th><th>❌</th><th>📆 Total</th></tr>`;
+  table.innerHTML += header;
+
+  // Table Body
+  students.forEach(student => {
+    let row = `<tr><td>${student.name}</td><td>${student.id}</td>`;
+    let presentCount = 0;
+    let total = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(currentYear, currentMonth, d);
+      const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
+
+      if (dateObj.getDay() === 0) continue; // Skip Sundays
+
+      total++;
+      const marked = attendance[student.id]?.[dateKey];
+      if (marked) {
+        row += `<td class="present-cell">✔</td>`;
+        presentCount++;
+      } else {
+        row += `<td class="absent-cell">✘</td>`;
+      }
+    }
+
+    const absent = total - presentCount;
+    row += `<td>${presentCount}</td><td>${absent}</td><td>${total}</td></tr>`;
+    table.innerHTML += row;
+  });
+
+  container.appendChild(table);
+}
 
 
     async function markAttendance(id) {

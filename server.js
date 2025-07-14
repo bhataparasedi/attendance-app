@@ -79,17 +79,21 @@ app.delete('/api/students/:id', async (req, res) => {
 });
 
 // Get attendance by date or all
+// ✅ FIXED: Get attendance (by date or all)
 app.get('/api/attendance', async (req, res) => {
+  const date = req.query.date;
+
   try {
-    if (req.query.date) {
-      const attendance = await Attendance.findOne({ date: req.query.date });
+    if (date) {
+      const attendance = await Attendance.findOne({ date });
       return res.json(attendance ? [attendance] : []);
     } else {
       const allAttendance = await Attendance.find();
       return res.json(allAttendance);
     }
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error("❌ Error in GET /api/attendance:", e);
+    return res.status(500).json({ error: 'Server error' });
   }
 });
 

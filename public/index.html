@@ -59,6 +59,7 @@
       background: #e9ecef;
       position: sticky;
       top: 0;
+      z-index: 1;
     }
 
     .present-cell { background: #d4edda; color: green; }
@@ -93,7 +94,7 @@
 
   <div id="studentCards"></div>
 
-  <h2 style="margin-top: 40px;">📊 Monthly Attendance Sheet</h2>
+  <h2 style="margin-top: 40px;">📊 Monthly Attendance Sheet (Today’s Data)</h2>
   <div id="monthlyTable"></div>
 
   <button onclick="exportCSV()">📤 Export Monthly Attendance</button>
@@ -136,6 +137,7 @@
         }
       } catch (e) {
         console.error("❌ Failed to load attendance:", e);
+        attendance = {};
       }
     }
 
@@ -191,6 +193,7 @@
       const table = document.createElement('table');
       table.className = 'student-table';
 
+      // Header with days of month excluding Sundays
       let header = `<tr><th>Name</th><th>ID</th>`;
       for (let d = 1; d <= daysInMonth; d++) {
         const dateObj = new Date(`${yyyy_mm}-${String(d).padStart(2, '0')}`);
@@ -209,7 +212,9 @@
           if (dateObj.getDay() === 0) continue;
 
           total++;
-          const marked = attendance[student.id]?.[dateKey] || (todayDate === dateKey && attendance[student.id]);
+
+          // Show checkmark only for today, rest absent
+          const marked = (todayDate === dateKey) && attendance[student.id];
           if (marked) {
             row += `<td class="present-cell">✔</td>`;
             presentCount++;
@@ -226,35 +231,43 @@
       container.appendChild(table);
     }
 
+    function showStatus(message, color) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.style.color = color;
+      clearTimeout(statusDiv.timeout);
+      statusDiv.timeout = setTimeout(() => {
+        statusDiv.textContent = '';
+      }, 5000);
+    }
+
     function markAttendance(id) {
       const cleanId = id.trim().toUpperCase();
-      const student = students.find(s => s.id === cleanId);
-      const statusDiv = document.getElementById('status');
-      const timeNow = new Date().toLocaleTimeString();
+      const student = students.find(s => s.id.toUpperCase() === cleanId);
 
       if (!student) {
         const msg = `Unknown ID: ${cleanId}`;
-        statusDiv.textContent = `⚠️ ${msg}`;
-        statusDiv.style.color = 'red';
+        showStatus(`⚠️ ${msg}`, 'red');
         speakText(msg);
         return;
       }
 
       if (attendance[cleanId]) {
         const msg = `${student.name} already marked present.`;
-        statusDiv.textContent = `🔁 ${msg}`;
-        statusDiv.style.color = 'orange';
+        showStatus(`🔁 ${msg}`, 'orange');
         speakText(msg);
         return;
       }
 
+      const timeNow = new Date().toLocaleTimeString();
       attendance[cleanId] = timeNow;
+
       saveAttendance();
       renderStudentCards();
       renderMonthlyTable();
+
       const msg = `${student.name} marked present at ${timeNow}`;
-      statusDiv.textContent = `✅ ${msg}`;
-      statusDiv.style.color = 'green';
+      showStatus(`✅ ${msg}`, 'green');
       speakText(msg);
     }
 
@@ -262,14 +275,16 @@
       const synth = window.speechSynthesis;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
-      const setVoice = () => {
+
+      function setVoice() {
         const voices = synth.getVoices();
         utterance.voice = voices.find(v =>
           v.name.toLowerCase().includes('zira') ||
           v.name.toLowerCase().includes('karen')
         ) || voices[0];
         synth.speak(utterance);
-      };
+      }
+
       if (synth.getVoices().length === 0) {
         synth.addEventListener('voiceschanged', setVoice);
       } else {
@@ -278,7 +293,46 @@
     }
 
     function exportCSV() {
-      alert("📤 Export feature coming soon!");
+      let csv = 'Name,ID,';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
+        const dateObj = new Date(dateKey);
+        if (dateObj.getDay() === 0) continue;
+        csv += d + ',';
+      }
+      csv += 'Present,Absent,Total\n';
+
+      students.forEach(student => {
+        let row = `"${student.name}","${student.id}",`;
+        let presentCount = 0, total = 0;
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateKey = `${yyyy_mm}-${String(d).padStart(2, '0')}`;
+          const dateObj = new Date(dateKey);
+          if (dateObj.getDay() === 0) continue;
+
+          total++;
+          const marked = (todayDate === dateKey) && attendance[student.id];
+          if (marked) {
+            row += '✔,';
+            presentCount++;
+          } else {
+            row += '✘,';
+          }
+        }
+
+        const absent = total - presentCount;
+        row += `${presentCount},${absent},${total}\n`;
+        csv += row;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance_${yyyy_mm}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {

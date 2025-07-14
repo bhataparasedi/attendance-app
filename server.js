@@ -36,13 +36,13 @@ const Attendance = mongoose.model('Attendance', attendanceSchema);
 
 // API Routes
 
-// ➤ Get all students
+// Get all students
 app.get('/api/students', async (req, res) => {
   const students = await Student.find();
   res.json(students);
 });
 
-// ➤ Add new student
+// Add new student
 app.post('/api/students', async (req, res) => {
   try {
     const newStudent = new Student(req.body);
@@ -53,7 +53,7 @@ app.post('/api/students', async (req, res) => {
   }
 });
 
-// ➤ Update student
+// Update student
 app.put('/api/students/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -64,7 +64,7 @@ app.put('/api/students/:id', async (req, res) => {
   }
 });
 
-// ➤ Delete student
+// Delete student
 app.delete('/api/students/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -75,7 +75,7 @@ app.delete('/api/students/:id', async (req, res) => {
   }
 });
 
-// ✅ FIXED: Get attendance (by date or all)
+// Get attendance (by date or all)
 app.get('/api/attendance', async (req, res) => {
   const date = req.query.date;
 
@@ -93,7 +93,7 @@ app.get('/api/attendance', async (req, res) => {
   }
 });
 
-// ➤ Add or update attendance (POST)
+// Add or update attendance (POST)
 app.post('/api/attendance', async (req, res) => {
   try {
     const { date, records } = req.body;
@@ -112,7 +112,7 @@ app.post('/api/attendance', async (req, res) => {
   }
 });
 
-// ➤ Update attendance by ID (PUT)
+// Update attendance by ID (PUT)
 app.put('/api/attendance/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -123,7 +123,7 @@ app.put('/api/attendance/:id', async (req, res) => {
   }
 });
 
-// Serve frontend (if hosted together)
+// Serve frontend (static files in public)
 app.use(express.static('public'));
 
 // Start server

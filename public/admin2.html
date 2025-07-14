@@ -178,7 +178,7 @@
 
   async function loadStudents() {
     try {
-      const res = await fetch('https://attendance-app-r8y3.onrender.com/api/students');
+      const res = await fetch('https://attendance-app-5w9d.onrender.com/api/students');
       students = await res.json();
     } catch (e) {
       alert('Failed to load students.');
@@ -187,7 +187,7 @@
 
   async function loadAllAttendance() {
     try {
-      const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+      const res = await fetch("https://attendance-app-5w9d.onrender.com/api/attendance");
       const data = await res.json();
       const all = {};
       data.forEach(entry => {
@@ -201,7 +201,7 @@
 
   async function loadAttendance() {
     try {
-      const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
+      const res = await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance?date=${todayDate}`);
       const data = await res.json();
       attendance = (data.length > 0) ? data[0].records : {};
     } catch {
@@ -212,16 +212,16 @@
   async function saveAttendanceForDate(date, records) {
     const payload = { date, records };
     try {
-      const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${encodeURIComponent(date)}`);
+      const res = await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance?date=${encodeURIComponent(date)}`);
       const data = await res.json();
       if (data.length && data[0].id) {
-        await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
+        await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance/${data[0].id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else {
-        await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
+        await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -233,18 +233,18 @@
   }
 
   async function saveAttendance() {
-    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${encodeURIComponent(todayDate)}`);
+    const res = await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance?date=${encodeURIComponent(todayDate)}`);
     const data = await res.json();
     const payload = { date: todayDate, records: attendance };
 
     if (data.length && data[0].id) {
-      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
+      await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance/${data[0].id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     } else {
-      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
+      await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -306,7 +306,7 @@
     const date = document.getElementById('viewDate').value;
     if (!date) return alert('Please select a date.');
     try {
-      const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+      const res = await fetch("https://attendance-app-5w9d.onrender.com/api/attendance");
       const data = await res.json();
       const all = {};
       data.forEach(entry => all[entry.date] = entry.records);
@@ -324,7 +324,7 @@
     const date = document.getElementById('exportDate').value;
     if (!date) return alert('Please select a date.');
     try {
-      const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${encodeURIComponent(date)}`);
+      const res = await fetch(`https://attendance-app-5w9d.onrender.com/api/attendance?date=${encodeURIComponent(date)}`);
       const data = await res.json();
       if (data.length === 0) return alert('No attendance data for ' + date);
       const records = data[0].records;
@@ -429,7 +429,7 @@
     }
     try {
       if (editingStudentId) {
-        await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodeURIComponent(editingStudentId)}`, {
+        await fetch(`https://attendance-app-5w9d.onrender.com/api/students/${encodeURIComponent(editingStudentId)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, name, mobile })
@@ -440,7 +440,7 @@
           saveStudentBtn.disabled = false;
           return;
         }
-        await fetch('https://attendance-app-r8y3.onrender.com/api/students', {
+        await fetch('https://attendance-app-5w9d.onrender.com/api/students', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, name, mobile, photo: '' })
@@ -458,7 +458,7 @@
   async function deleteStudent(id) {
     if (!confirm(`Delete student ${id}? This action cannot be undone.`)) return;
     try {
-      await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodeURIComponent(id)}`, {
+      await fetch(`https://attendance-app-5w9d.onrender.com/api/students/${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
       await initAdmin();
@@ -481,7 +481,7 @@
     const formData = new FormData();
     formData.append('photo', file);
     try {
-      await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodeURIComponent(id)}/uploadPhoto`, {
+      await fetch(`https://attendance-app-5w9d.onrender.com/api/students/${encodeURIComponent(id)}/uploadPhoto`, {
         method: 'POST',
         body: formData
       });

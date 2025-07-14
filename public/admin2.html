@@ -472,28 +472,27 @@
     if (input) input.click();
   }
 
-  async function uploadStudentPhoto(studentId, file) {
+  async function uploadStudentPhoto(studentId, fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return alert('Please select a photo to upload.');
+
   const formData = new FormData();
   formData.append('photo', file);
 
   try {
     const res = await fetch(`${BASE_URL}/api/students/${studentId}/uploadPhoto`, {
       method: 'POST',
-      body: formData
+      body: formData,
     });
+    if (!res.ok) throw new Error('Upload failed');
+
     const data = await res.json();
-
-    if (!res.ok) {
-      alert('Upload failed: ' + data.error);
-      return;
-    }
-
     alert('Photo uploaded successfully!');
-    // Optionally refresh student list or photo display here
-    await loadStudents();
-    renderStudentCards();
-  } catch (e) {
-    alert('Upload error: ' + e.message);
+
+    // Refresh student list or photo display as needed
+    loadStudents();
+  } catch (err) {
+    alert('Photo upload error: ' + err.message);
   }
 }
 

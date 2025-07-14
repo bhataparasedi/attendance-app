@@ -1,16 +1,16 @@
 {
   "name": "attendance-app",
   "version": "1.0.0",
-  "description": "QR Attendance System",
+  "description": "QR Code Attendance Application",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "seed": "node insertStudents.js"
+    "start": "node server.js"
   },
   "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.3.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "mongoose": "^7.4.0"
+    "multer": "^1.4.5-lts.1"
   }
 }

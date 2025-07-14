@@ -96,23 +96,29 @@
       }
     }
 
-    function renderStudentCards() {
-      const container = document.getElementById('studentCards');
-      container.innerHTML = '';
-      students.forEach(s => {
-        const present = attendanceRecords[s.id];
-        const card = document.createElement('div');
-        card.className = 'card ' + (present ? 'present' : 'absent');
-        card.innerHTML = `
-          <img src="${s.photo || `https://i.pravatar.cc/100?u=${s.id}`}" alt="photo" />
-          <h3>${s.name}</h3>
-          <p>ID: ${s.id}</p>
-          <p>📞 ${s.mobile}</p>
-          <p><strong>Status Today:</strong> ${present ? '✅ Present' : '❌ Absent'}</p>
-        `;
-        container.appendChild(card);
-      });
-    }
+  function renderStudentCards() {
+  const container = document.getElementById('studentCards');
+  container.innerHTML = '';
+  students.forEach(s => {
+    const present = attendanceRecords[s.id];
+
+    const photoUrl = s.photo
+      ? (s.photo.startsWith('http') ? s.photo : `${window.location.origin}${s.photo}`)
+      : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // neutral icon
+
+    const card = document.createElement('div');
+    card.className = 'card ' + (present ? 'present' : 'absent');
+    card.innerHTML = `
+      <img src="${photoUrl}" alt="photo" width="80" height="80" />
+      <h3>${s.name}</h3>
+      <p>ID: ${s.id}</p>
+      <p>📞 ${s.mobile}</p>
+      <p><strong>Status Today:</strong> ${present ? '✅ Present' : '❌ Absent'}</p>
+    `;
+    container.appendChild(card);
+  });
+}
+
 
     async function markAttendance(id) {
       const cleanId = id.trim().toUpperCase();

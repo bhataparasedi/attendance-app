@@ -116,34 +116,27 @@
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const todayDate = today.toISOString().split("T")[0];
 
-    async function loadStudents() {
-      try {
-        const response = await fetch(`${BASE_URL}/api/students`);
-        let result = await response.json();
-        students = result.map(s => {
-          if (s.photo) s.photo = `${s.photo}?t=${Date.now()}`;
-          return s;
-        });
-        renderStudentCards();
-      } catch (e) {
-        alert("⚠️ Failed to load student data.");
-        console.error(e);
-      }
-    }
+    const res = await fetch(`${BASE_URL}/api/attendance?date=${todayDate}`);
+const data = await res.json();
 
-    async function loadAttendance() {
-      try {
-        const res = await fetch(`${BASE_URL}/api/attendance?date=${todayDate}`);
-        const data = await res.json();
-        if (!data || typeof data !== 'object' || !data.records) {
-          console.error("Invalid attendance data:", data);
-          return;
-        }
-        attendance = data.records || {};
-      } catch (e) {
-        console.error("⚠️ Error loading attendance:", e);
-      }
-    }
+if (Array.isArray(data)) {
+  if (data.length === 0) {
+    console.warn("📭 No attendance data yet for today.");
+    attendance = {};
+    return;
+  } else {
+    console.error("Expected single object but got array:", data);
+    return;
+  }
+}
+
+if (!data || typeof data !== 'object' || !data.records) {
+  console.error("Invalid attendance data:", data);
+  return;
+}
+
+attendance = data.records || {};
+
 
     async function saveAttendance() {
       const payload = {

@@ -626,69 +626,113 @@
 
   // 21. Live Monthly Attendance Dashboard
   async function generateLiveMonthlyDashboard() {
-    const monthInput = document.getElementById('monthPicker').value || todayDate.slice(0,7);
-    const allAttendance = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-    const yearMonth = monthInput;
-    const dates = Object.keys(allAttendance).filter(d => d.startsWith(yearMonth));
-    dates.sort();
+  const monthInput = document.getElementById('monthPicker').value || todayDate.slice(0,7);
+  const allAttendance = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+  const [year, month] = monthInput.split('-');
 
-    // Table Head
-    const thead = document.getElementById('liveTableHead');
-    thead.innerHTML = '';
-    const headRow = document.createElement('tr');
-    headRow.appendChild(document.createElement('th')); // Empty top-left cell
+  // Get total days in month
+  const totalDaysInMonth = new Date(year, parseInt(month), 0).getDate();
+
+  // Build array of dates in yyyy-mm-dd format for the entire month
+  const dates = [];
+  for (let day = 1; day <= totalDaysInMonth; day++) {
+    const dayStr = day.toString().padStart(2, '0');
+    dates.push(`${year}-${month}-${dayStr}`);
+  }
+
+  // Table Head
+  const thead = document.getElementById('liveTableHead');
+  thead.innerHTML = '';
+  const headRow = document.createElement('tr');
+  headRow.appendChild(document.createElement('th')); // Empty top-left cell
+
+  dates.forEach(dateStr => {
+    const dateObj = new Date(dateStr);
+    const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1=Monday ...
+    const th = document.createElement('th');
+    if (dayOfWeek === 0) {
+      th.textContent = 'Sun';  // Label Sunday column as "Sun"
+      th.style.color = 'red';  // Optional: highlight Sundays in red
+      th.style.fontWeight = 'bold';
+    } else {
+      th.textContent = dateObj.getDate(); // Just date number
+    }
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+
+  // Table Body
+  const tbody = document.getElementById('liveTableBody');
+  tbody.innerHTML = '';
+  students.forEach(s => {
+    const tr = document.createElement('tr');
+    const nameCell = document.createElement('td');
+    nameCell.textContent = s.name;
+    tr.appendChild(nameCell);
+
     dates.forEach(date => {
-      const th = document.createElement('th');
-      th.textContent = date.slice(8); // just day number
-      headRow.appendChild(th);
-    });
-    thead.appendChild(headRow);
+      const td = document.createElement('td');
+      const present = allAttendance[date]?.[s.id];
+      const dateObj = new Date(date);
+      const isSunday = dateObj.getDay() === 0;
 
-    // Table Body
-    const tbody = document.getElementById('liveTableBody');
-    tbody.innerHTML = '';
-    students.forEach(s => {
-      const tr = document.createElement('tr');
-      const nameCell = document.createElement('td');
-      nameCell.textContent = s.name;
-      tr.appendChild(nameCell);
+      // Show P/A but Sundays can still be editable
+      td.textContent = present ? 'P' : 'A';
+      td.style.cursor = 'pointer';
+      td.style.userSelect = 'none';
 
-      dates.forEach(date => {
-        const td = document.createElement('td');
-        const present = allAttendance[date]?.[s.id];
-        td.textContent = present ? 'P' : 'A';
-        td.style.cursor = 'pointer';
-        td.style.userSelect = 'none';
+      if (isSunday) {
+        // Sundays can have different style - optional: grey background or keep red from header
+        td.style.backgroundColor = '#f0f0f0';
+        td.style.color = '#888';
+      } else {
         td.style.backgroundColor = present ? '#d4edda' : '#f8d7da';
+      }
 
-        td.onclick = async () => {
-          // Toggle attendance for this date & student
-          const all = allAttendance[date] || {};
-          if (all[s.id]) {
-            delete all[s.id];
-            td.textContent = 'A';
-            td.style.backgroundColor = '#f8d7da';
+      td.onclick = async () => {
+        // Toggle attendance only for non-Sundays (optional)
+        if (isSunday) {
+          alert("Sunday attendance is not counted but you can still toggle.");
+        }
+        const all = allAttendance[date] || {};
+        if (all[s.id]) {
+          delete all[s.id];
+          td.textContent = 'A';
+          if (isSunday) {
+            td.style.color = '#888';
+            td.style.backgroundColor = '#f0f0f0';
           } else {
-            all[s.id] = new Date().toLocaleTimeString('en-GB', {hour12:false});
-            td.textContent = 'P';
+            td.style.color = '';
+            td.style.backgroundColor = '#f8d7da';
+          }
+        } else {
+          all[s.id] = new Date().toLocaleTimeString('en-GB', {hour12:false});
+          td.textContent = 'P';
+          if (isSunday) {
+            td.style.color = '#888';
+            td.style.backgroundColor = '#f0f0f0';
+          } else {
+            td.style.color = '';
             td.style.backgroundColor = '#d4edda';
           }
-          allAttendance[date] = all;
-          localStorage.setItem('allAttendance', JSON.stringify(allAttendance));
-          // Save to backend
-          await saveAttendanceForDate(date, all);
-          // If editing current day, reload attendance object and table
-          if (date === todayDate) {
-            attendance = allAttendance[date];
-            renderTable();
-          }
-        };
-        tr.appendChild(td);
-      });
-
-      tbody.appendChild(tr);
+        }
+        allAttendance[date] = all;
+        localStorage.setItem('allAttendance', JSON.stringify(allAttendance));
+        // Save to backend
+        await saveAttendanceForDate(date, all);
+        // If editing current day, reload attendance object and table
+        if (date === todayDate) {
+          attendance = allAttendance[date];
+          renderTable();
+        }
+      };
+      tr.appendChild(td);
     });
-  }
+
+    tbody.appendChild(tr);
+  });
+}
+
 
   // 22. Initialize admin panel
   async function initAdmin() {

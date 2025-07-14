@@ -716,7 +716,7 @@ function downloadBlob(name, id, blobURL) {
 }
 setInterval(() => {
   initAdmin(); // ya initIndex(); for index.html
-}, 1000); // refresh every 1 seconds
+}, 10000); // refresh every 1 seconds
 function triggerPhotoUpload(studentId) {
   document.getElementById(`photoInput_${studentId}`).click();
 }
@@ -762,6 +762,10 @@ async function refreshAllAttendanceFromBackend() {
   } catch (e) {
     console.error("Error refreshing all attendance:", e);
   }
+}
+function closeModal() {
+  document.getElementById('modalOverlay').style.display = 'none';
+  document.getElementById('modalErrorMsg').textContent = '';
 }
 
 

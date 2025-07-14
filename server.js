@@ -8,45 +8,41 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // JSON body parsing
+app.use(express.json());
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.log('MongoDB connection error:', err));
+.then(() => console.log('✅ MongoDB connected'))
+.catch(err => console.log('❌ MongoDB connection error:', err));
 
-// Define Mongoose Schemas and Models
+// Mongoose Schemas and Models
 
-// Student schema
 const studentSchema = new mongoose.Schema({
   id: { type: String, unique: true, required: true },
   name: String,
   mobile: String,
-  photo: String, // URL or base64 string for photo
+  photo: String,
 });
-
 const Student = mongoose.model('Student', studentSchema);
 
-// Attendance schema
 const attendanceSchema = new mongoose.Schema({
-  date: { type: String, required: true }, // yyyy-mm-dd format
-  records: { type: Map, of: String }, // { studentId: timeString }
+  date: { type: String, required: true }, // yyyy-mm-dd
+  records: { type: Map, of: String },     // { studentId: timeString }
 });
-
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 
-// API routes
+// API Routes
 
-// Get all students
+// ➤ Get all students
 app.get('/api/students', async (req, res) => {
   const students = await Student.find();
   res.json(students);
 });
 
-// Add new student
+// ➤ Add new student
 app.post('/api/students', async (req, res) => {
   try {
     const newStudent = new Student(req.body);
@@ -57,7 +53,7 @@ app.post('/api/students', async (req, res) => {
   }
 });
 
-// Update student by id
+// ➤ Update student
 app.put('/api/students/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -68,7 +64,7 @@ app.put('/api/students/:id', async (req, res) => {
   }
 });
 
-// Delete student
+// ➤ Delete student
 app.delete('/api/students/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -79,25 +75,36 @@ app.delete('/api/students/:id', async (req, res) => {
   }
 });
 
-// Get attendance by date
+// ✅ FIXED: Get attendance (by date or all)
 app.get('/api/attendance', async (req, res) => {
   const date = req.query.date;
-  if (!date) return res.status(400).json({ error: 'Date is required' });
 
-  const attendance = await Attendance.findOne({ date });
-  res.json(attendance ? attendance : {});
+  try {
+    if (date) {
+      const attendance = await Attendance.findOne({ date });
+      return res.json(attendance ? [attendance] : []);
+    } else {
+      const allAttendance = await Attendance.find();
+      return res.json(allAttendance);
+    }
+  } catch (e) {
+    console.error("❌ Error in GET /api/attendance:", e);
+    return res.status(500).json({ error: 'Server error' });
+  }
 });
 
-// Save or update attendance for a date
+// ➤ Add or update attendance (POST)
 app.post('/api/attendance', async (req, res) => {
   try {
     const { date, records } = req.body;
     let attendance = await Attendance.findOne({ date });
+
     if (attendance) {
       attendance.records = records;
     } else {
       attendance = new Attendance({ date, records });
     }
+
     await attendance.save();
     res.json({ message: 'Attendance saved' });
   } catch (e) {
@@ -105,7 +112,7 @@ app.post('/api/attendance', async (req, res) => {
   }
 });
 
-// Update attendance by id (for PUT)
+// ➤ Update attendance by ID (PUT)
 app.put('/api/attendance/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -116,9 +123,10 @@ app.put('/api/attendance/:id', async (req, res) => {
   }
 });
 
-// Serve frontend (if any)
+// Serve frontend (if hosted together)
 app.use(express.static('public'));
 
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

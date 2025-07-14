@@ -4,90 +4,91 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-
-  <meta charset="UTF-8" />
-  <title>Admin Panel with QR Attendance</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
-    h2, h3, h4 { margin-bottom: 10px; }
-    #loginDiv, #adminContent {
-      max-width: 1000px; margin: auto; background: white;
-      padding: 20px; border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    input[type="password"], input[type="text"], input[type="date"], input[type="month"], select {
-      padding: 8px; width: calc(100% - 18px); margin-bottom: 10px; font-size: 16px;
-    }
-    button {
-      padding: 10px 16px; font-size: 16px; cursor: pointer;
-      border-radius: 4px; border: none; background: #007bff; color: white; margin-right: 10px;
-    }
-    button:hover { background: #0056b3; }
-    table {
-      width: 100%; border-collapse: collapse; margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ddd; padding: 10px; text-align: center;
-    }
-    th { background: #007bff; color: white; }
-    .present { background-color: #d4edda; }
-    .absent { background-color: #f8d7da; }
-    .toggle-btn, .edit-btn, .delete-btn {
-      padding: 5px 10px; font-size: 14px; margin: 2px;
-      border-radius: 4px; border: none; cursor: pointer;
-    }
-    .toggle-btn { background: #28a745; color: white; }
-    .edit-btn { background: #ffc107; color: black; }
-    .delete-btn { background: #dc3545; color: white; }
-    .toggle-btn:hover { background: #218838; }
-    .edit-btn:hover { background: #e0a800; }
-    .delete-btn:hover { background: #c82333; }
-    #logoutBtn { background: #6c757d; margin-top: 15px; }
-    #logoutBtn:hover { background: #5a6268; }
-    #liveDashboardTable td:hover { filter: brightness(0.95); cursor: pointer; }
-    #liveDashboardContainer { overflow-x: auto; }
-    #qrModal, #modalOverlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; display: none;
-      z-index: 9999;
-    }
-    #qrModalContent, #modal {
-      background: white; padding: 20px; border-radius: 8px;
-      width: 300px; max-width: 95%;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Admin Panel with QR Attendance</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
+  h2, h3, h4 { margin-bottom: 10px; }
+  #loginDiv, #adminContent {
+    max-width: 1000px; margin: auto; background: white;
+    padding: 20px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  input[type="password"], input[type="text"], input[type="date"], input[type="month"], select {
+    padding: 8px; width: calc(100% - 18px); margin-bottom: 10px; font-size: 16px;
+  }
+  button {
+    padding: 10px 16px; font-size: 16px; cursor: pointer;
+    border-radius: 4px; border: none; background: #007bff; color: white; margin-right: 10px;
+    transition: background-color 0.3s ease;
+  }
+  button:hover:enabled { background: #0056b3; }
+  button:disabled { background: #a0a0a0; cursor: not-allowed; }
+  table {
+    width: 100%; border-collapse: collapse; margin-top: 20px;
+  }
+  th, td {
+    border: 1px solid #ddd; padding: 10px; text-align: center;
+  }
+  th { background: #007bff; color: white; }
+  .present { background-color: #d4edda; }
+  .absent { background-color: #f8d7da; }
+  .toggle-btn, .edit-btn, .delete-btn {
+    padding: 5px 10px; font-size: 14px; margin: 2px;
+    border-radius: 4px; border: none; cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .toggle-btn { background: #28a745; color: white; }
+  .edit-btn { background: #ffc107; color: black; }
+  .delete-btn { background: #dc3545; color: white; }
+  .toggle-btn:hover { background: #218838; }
+  .edit-btn:hover { background: #e0a800; }
+  .delete-btn:hover { background: #c82333; }
+  #logoutBtn { background: #6c757d; margin-top: 15px; }
+  #logoutBtn:hover { background: #5a6268; }
+  #liveDashboardTable td:hover { filter: brightness(0.95); cursor: pointer; }
+  #liveDashboardContainer { overflow-x: auto; }
+  #qrModal, #modalOverlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; display: none;
+    z-index: 9999;
+  }
+  #qrModalContent, #modal {
+    background: white; padding: 20px; border-radius: 8px;
+    width: 300px; max-width: 95%;
+  }
+</style>
 </head>
 <body>
 
 <div id="loginDiv">
   <h2>Admin Login</h2>
   <input type="password" id="adminPass" placeholder="Enter Admin Password" />
-  <button onclick="checkPassword()">Login</button>
+  <button id="loginBtn" onclick="checkPassword()">Login</button>
   <p id="loginMsg" style="color:red;"></p>
 </div>
 
 <div id="adminContent" style="display:none;">
   <h2>Admin Attendance Dashboard</h2>
   <div style="margin-bottom: 15px;">
-  <label for="viewDate"><strong>📅 View Attendance By Date:</strong></label>
-  <input type="date" id="viewDate" onchange="viewAttendanceByDate()" />
-</div>
+    <label for="viewDate"><strong>📅 View Attendance By Date:</strong></label>
+    <input type="date" id="viewDate" onchange="viewAttendanceByDate()" />
+  </div>
 
   <div id="dateDisplay"></div>
   <button onclick="showAddModal()">➕ Add New Student</button>
 
   <h3>📲 QR Code Generator</h3>
-<button onclick="generateAllQRCodes()">Generate All Student QR Codes</button>
-<button onclick="downloadAllQRAsPDF()">⬇️ Download All QR PDF</button>
+  <button onclick="generateAllQRCodes()">Generate All Student QR Codes</button>
+  <button onclick="downloadAllQRAsPDF()">⬇️ Download All QR PDF</button>
 
-<button onclick="showIndividualQRModal()">Generate Individual QR</button>
-<div id="qrCodeContainer" style="margin-top: 20px;"></div>
+  <button onclick="showIndividualQRModal()">Generate Individual QR</button>
+  <div id="qrCodeContainer" style="margin-top: 20px;"></div>
 
   <table>
     <thead>
       <tr>
-        <th>ID</th><th>Name</th><th>Mobile</th><th>Status</th><th>Actions</th>
+        <th>ID</th><th>Name</th><th>Mobile</th><th>Status</th><th>Actions</th><th>Photo</th>
       </tr>
     </thead>
     <tbody id="attendanceTableBody"></tbody>
@@ -119,7 +120,6 @@
   <button id="logoutBtn" onclick="logout()">Logout</button>
 </div>
 
-<!-- Add/Edit Modal -->
 <div id="modalOverlay">
   <div id="modal">
     <h3 id="modalTitle">Add Student</h3>
@@ -128,13 +128,12 @@
     <input type="text" id="studentMobileInput" placeholder="Mobile Number" />
     <div style="text-align:right; margin-top:10px;">
       <button onclick="closeModal()">Cancel</button>
-      <button onclick="saveStudent()">Save</button>
+      <button id="saveStudentBtn" onclick="saveStudent()">Save</button>
     </div>
     <p id="modalErrorMsg" style="color:red;"></p>
   </div>
 </div>
 
-<!-- Individual QR Modal -->
 <div id="qrModal">
   <div id="qrModalContent">
     <h3>Generate Individual QR</h3>
@@ -145,630 +144,531 @@
 </div>
 
 <script>
-const ADMIN_PASSWORD = 'teacher123';
-let students = [];
-let attendance = {};
-let todayDate = new Date().toISOString().split('T')[0];
-let editingStudentId = null;
+(() => {
+  const ADMIN_PASSWORD = 'teacher123';
+  let students = [];
+  let attendance = {};
+  let todayDate = new Date().toISOString().split('T')[0];
+  let editingStudentId = null;
 
-function checkPassword() {
-  const pass = document.getElementById('adminPass').value;
-  if (pass === ADMIN_PASSWORD) {
-    document.getElementById('loginDiv').style.display = 'none';
-    document.getElementById('adminContent').style.display = 'block';
-    initAdmin();
-  } else {
-    document.getElementById('loginMsg').textContent = 'Incorrect password!';
-  }
-}
+  const loginBtn = document.getElementById('loginBtn');
+  const saveStudentBtn = document.getElementById('saveStudentBtn');
 
-function logout() {
-  document.getElementById('adminContent').style.display = 'none';
-  document.getElementById('loginDiv').style.display = 'block';
-  document.getElementById('adminPass').value = '';
-}
-
-async function loadStudents() {
-const res = await fetch('https://attendance-app-r8y3.onrender.com/api/students');
-
-  students = await res.json();
-}
-
-
-async function saveStudent() {
-  const id = document.getElementById('studentIdInput').value.trim();
-  const name = document.getElementById('studentNameInput').value.trim();
-  const mobile = document.getElementById('studentMobileInput').value.trim();
-  const msg = document.getElementById('modalErrorMsg');
-  if (!id || !name) return msg.textContent = 'ID and Name are required.';
-
-  const payload = { id, name, mobile };
-
-  if (editingStudentId) {
-await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${editingStudentId}`, {
-
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } else {
-await fetch(`https://attendance-app-r8y3.onrender.com/api/students`, {
-
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  function escapeCSV(value) {
+    if (typeof value !== 'string') return value;
+    return `"${value.replace(/"/g, '""')}"`;
   }
 
-  closeModal();
-  initAdmin();
-   localStorage.setItem('updated', Date.now());
-}
+  function checkPassword() {
+    const pass = document.getElementById('adminPass').value;
+    if (pass === ADMIN_PASSWORD) {
+      document.getElementById('loginDiv').style.display = 'none';
+      document.getElementById('adminContent').style.display = 'block';
+      initAdmin();
+    } else {
+      document.getElementById('loginMsg').textContent = 'Incorrect password!';
+    }
+  }
 
+  function logout() {
+    document.getElementById('adminContent').style.display = 'none';
+    document.getElementById('loginDiv').style.display = 'block';
+    document.getElementById('adminPass').value = '';
+  }
 
-async function loadAttendance() {
-  try {
-    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`);
+  async function loadStudents() {
+    try {
+      const res = await fetch('https://attendance-app-r8y3.onrender.com/api/students');
+      students = await res.json();
+    } catch (e) {
+      alert('Failed to load students.');
+    }
+  }
+
+  async function loadAllAttendance() {
+    try {
+      const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+      const data = await res.json();
+      const all = {};
+      data.forEach(entry => {
+        all[entry.date] = entry.records;
+      });
+      localStorage.setItem('allAttendance', JSON.stringify(all));
+    } catch {
+      alert('Failed to load attendance data.');
+    }
+  }
+
+  async function loadAttendance() {
+    try {
+      const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
+      const data = await res.json();
+      attendance = (data.length > 0) ? data[0].records : {};
+    } catch {
+      attendance = {};
+    }
+  }
+
+  async function saveAttendanceForDate(date, records) {
+    const payload = { date, records };
+    try {
+      const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${encodeURIComponent(date)}`);
+      const data = await res.json();
+      if (data.length && data[0].id) {
+        await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+    } catch {
+      alert('Failed to save attendance.');
+    }
+  }
+
+  async function saveAttendance() {
+    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${encodeURIComponent(todayDate)}`);
     const data = await res.json();
-
-    // Save all attendance by date to localStorage
-    const all = {};
-    data.forEach(entry => {
-      all[entry.date] = entry.records;
-    });
-
-    localStorage.setItem('allAttendance', JSON.stringify(all)); // store for report & dashboard
-    attendance = all[todayDate] || {}; // today's data for table
-  } catch (e) {
-    console.error("⚠️ Error loading attendance:", e);
-  }
-}
-async function saveAttendanceForDate(date, records) {
-  const payload = {
-    date: date,
-    records: records
-  };
-
-  try {
-    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${date}`);
-    const data = await res.json();
+    const payload = { date: todayDate, records: attendance };
 
     if (data.length && data[0].id) {
-      // Update
       await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     } else {
-      // Create new
       await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     }
-
-    console.log(`✅ Attendance saved for ${date}`);
-  } catch (err) {
-    console.error('❌ Error saving attendance:', err);
-  }
-}
-
-async function saveAttendance() {
-  const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${todayDate}`);
-  const data = await res.json();
-
-  const payload = {
-    date: todayDate,
-    records: attendance
-  };
-
-  if (data.length && data[0].id) {
-    // Update existing
-    await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } else {
-    // Create new
-    await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  }
-
-  await loadAttendance();
-  renderTable();
-  generateLiveMonthlyDashboard();
-
-  localStorage.setItem('updated', Date.now());
-}
-
-
-
-
-function renderTable() {
-  const tbody = document.getElementById('attendanceTableBody');
-  tbody.innerHTML = '';
-  students.forEach(student => {
-    const time = attendance[student.id];
-    const tr = document.createElement('tr');
-    tr.className = time ? 'present' : 'absent';
-    tr.innerHTML = `
-      <td>${student.id}</td>
-      <td>${student.name}</td>
-      <td>${student.mobile || ''}</td>
-      <td>${time ? 'Present at ' + time : 'Absent'}</td>
-     <td>
-  <button class="toggle-btn" onclick="toggleAttendance('${student.id}')">Mark ${time ? 'Absent' : 'Present'}</button>
-  <button class="edit-btn" onclick="showEditModal('${student.id}')">Edit</button>
-  <button class="delete-btn" onclick="deleteStudent('${student.id}')">Delete</button>
-  <button class="edit-btn" onclick="triggerPhotoUpload('${student.id}')">📷 Upload Photo</button>
-  <input type="file" id="photoInput_${student.id}" style="display:none" accept="image/*" onchange="uploadStudentPhoto('${student.id}', this.files[0])" />
-</td>
-<td>
-  <img src="${student.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" width="40" height="40" style="border-radius:50%;" />
-</td>
-
-    `;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('dateDisplay').textContent = `Date: ${todayDate}`;
-}
-
-function toggleAttendance(id) {
-  if (attendance[id]) delete attendance[id];
-  else attendance[id] = new Date().toLocaleTimeString('en-GB', { hour12: false });
-  saveAttendance();
-  renderTable();
-  generateLiveMonthlyDashboard();
-}
-async function viewAttendanceByDate() {
-  const date = document.getElementById('viewDate').value;
-  if (!date) {
-    alert('Please select a date.');
-    return;
-  }
-
-  try {
-    // Fetch all attendance data fresh from backend
-    const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
-    const data = await res.json();
-
-    const all = {};
-    data.forEach(entry => {
-      all[entry.date] = entry.records;
-    });
-
-    // Update localStorage
-    localStorage.setItem('allAttendance', JSON.stringify(all));
-
-    // Set attendance for selected date
-    attendance = all[date] || {};
-    todayDate = date;
-
+    await loadAttendance();
     renderTable();
     generateLiveMonthlyDashboard();
-  } catch (err) {
-    console.error('Error loading attendance:', err);
-    alert('Failed to load attendance data');
+    localStorage.setItem('updated', Date.now());
   }
-}
 
+  function renderTable() {
+    const tbody = document.getElementById('attendanceTableBody');
+    tbody.innerHTML = '';
+    students.forEach(student => {
+      const time = attendance[student.id];
+      const tr = document.createElement('tr');
+      tr.className = time ? 'present' : 'absent';
+      tr.innerHTML = `
+        <td>${escapeHTML(student.id)}</td>
+        <td>${escapeHTML(student.name)}</td>
+        <td>${escapeHTML(student.mobile || '')}</td>
+        <td>${time ? 'Present at ' + escapeHTML(time) : 'Absent'}</td>
+        <td>
+          <button class="toggle-btn" onclick="toggleAttendance('${escapeJS(student.id)}')">Mark ${time ? 'Absent' : 'Present'}</button>
+          <button class="edit-btn" onclick="showEditModal('${escapeJS(student.id)}')">Edit</button>
+          <button class="delete-btn" onclick="deleteStudent('${escapeJS(student.id)}')">Delete</button>
+          <button class="edit-btn" onclick="triggerPhotoUpload('${escapeJS(student.id)}')">📷 Upload Photo</button>
+          <input type="file" id="photoInput_${escapeHTMLAttr(student.id)}" style="display:none" accept="image/*" onchange="uploadStudentPhoto('${escapeJS(student.id)}', this.files[0])" />
+        </td>
+        <td>
+          <img src="${student.photo ? escapeHTML(student.photo) : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" width="40" height="40" style="border-radius:50%;" />
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('dateDisplay').textContent = `Date: ${todayDate}`;
+  }
 
-function exportAttendanceByDate() {
-  const date = document.getElementById('exportDate').value;
-  if (!date) return alert('Please select a date.');
+  function escapeHTML(text) {
+    return text.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[m]);
+  }
+  function escapeHTMLAttr(text) {
+    return text.replace(/"/g, '&quot;');
+  }
+  function escapeJS(text) {
+    return text.replace(/'/g, "\\'");
+  }
 
-  fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${date}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length === 0) {
-        return alert('No attendance data for ' + date);
-      }
+  async function toggleAttendance(id) {
+    if (attendance[id]) delete attendance[id];
+    else attendance[id] = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    await saveAttendance();
+  }
 
+  async function viewAttendanceByDate() {
+    const date = document.getElementById('viewDate').value;
+    if (!date) return alert('Please select a date.');
+    try {
+      const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
+      const data = await res.json();
+      const all = {};
+      data.forEach(entry => all[entry.date] = entry.records);
+      localStorage.setItem('allAttendance', JSON.stringify(all));
+      attendance = all[date] || {};
+      todayDate = date;
+      renderTable();
+      generateLiveMonthlyDashboard();
+    } catch {
+      alert('Failed to load attendance data');
+    }
+  }
+
+  async function exportAttendanceByDate() {
+    const date = document.getElementById('exportDate').value;
+    if (!date) return alert('Please select a date.');
+    try {
+      const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${encodeURIComponent(date)}`);
+      const data = await res.json();
+      if (data.length === 0) return alert('No attendance data for ' + date);
       const records = data[0].records;
       const rows = [['ID', 'Name', 'Mobile', 'Status', 'Time', 'Date']];
-
       students.forEach(s => {
         const time = records[s.id] || '';
         const status = time ? 'Present' : 'Absent';
         rows.push([s.id, s.name, s.mobile || '', status, time, date]);
       });
-
-      const csv = rows.map(r => r.join(',')).join('\n');
+      const csv = rows.map(r => r.map(escapeCSV).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `attendance_${date}.csv`;
       a.click();
-    })
-    .catch(err => console.error(err));
-}
-
-
-function generateMonthlyReport() {
-  const monthInput = document.getElementById('monthPicker').value;
-  if (!monthInput) return alert('Please select a month.');
-  
-  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-  const [year, month] = monthInput.split('-');
-  
-  // Filter out Sundays
-  const filteredDates = Object.keys(all).filter(d => {
-    return d.startsWith(`${year}-${month}`) && new Date(d).getDay() !== 0;  // Sunday = 0
-  });
-
-  const tbody = document.getElementById('monthlyTableBody');
-  tbody.innerHTML = '';
-
-  students.forEach(s => {
-    let present = 0;
-    filteredDates.forEach(d => {
-      if (all[d]?.[s.id]) present++;
-    });
-    const total = filteredDates.length;
-    const percent = total ? ((present / total) * 100).toFixed(1) : '0.0';
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${s.id}</td><td>${s.name}</td><td>${present}</td><td>${total}</td><td>${percent}%</td>`;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById('monthlyTable').style.display = 'table';
-}
-
-
-function exportMonthlyCSV() {
-  const tbody = document.getElementById('monthlyTableBody');
-  if (!tbody || tbody.rows.length === 0) {
-    return alert('Generate report first.');
-  }
-  const rows = [['ID','Name','Present Days','Total Days','Attendance %']];
-
-  Array.from(tbody.rows).forEach(row => {
-    const cols = Array.from(row.cells).map(cell => cell.textContent);
-    rows.push(cols);
-  });
-
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  const month = document.getElementById('monthPicker').value;
-  a.href = URL.createObjectURL(blob);
-  a.download = `attendance_summary_${month || 'month'}.csv`;
-  a.click();
-}
-
-function generateLiveMonthlyDashboard() {
-  const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-  const now = new Date(), year = now.getFullYear(), month = now.getMonth();
-  const days = new Date(year, month + 1, 0).getDate();
-  const dates = [...Array(days)].map((_, d) => `${year}-${String(month + 1).padStart(2, '0')}-${String(d + 1).padStart(2, '0')}`);
-
-  document.getElementById('liveTableHead').innerHTML = `<tr><th>Student</th>${dates.map(d => `<th>${new Date(d).getDate()}</th>`).join('')}</tr>`;
-
-  const body = document.getElementById('liveTableBody');
-  body.innerHTML = '';
-
-  students.forEach(s => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${s.name}</td>` + dates.map(d => {
-      const present = all[d]?.[s.id];
-      return `<td onclick="toggleAttendanceForDate('${s.id}', '${d}')" style="background:${present ? '#d4edda' : '#f8d7da'};">${present ? '✅' : '❌'}</td>`;
-    }).join('');
-    body.appendChild(tr);
-  });
-}
-
-async function toggleAttendanceForDate(studentId, date) {
-  const timeNow = new Date().toLocaleTimeString('en-GB', { hour12: false });
-
-  // Load allAttendance from localStorage
-  const allAttendance = JSON.parse(localStorage.getItem('allAttendance') || '{}');
-  if (!allAttendance[date]) allAttendance[date] = {};
-
-  // Toggle presence
-  if (allAttendance[date][studentId]) {
-    delete allAttendance[date][studentId];
-  } else {
-    allAttendance[date][studentId] = timeNow;
-  }
-
-  // Save locally
-  localStorage.setItem('allAttendance', JSON.stringify(allAttendance));
-
-  // Save to backend
-  await saveAttendanceForDate(date, allAttendance[date]);
-
-  // Update live dashboard
-  generateLiveMonthlyDashboard();
-}
-async function saveAttendanceForDate(date, records) {
-  const payload = {
-    date: date,
-    records: records
-  };
-
-  try {
-    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance?date=${date}`);
-    const data = await res.json();
-
-    if (data.length && data[0].id) {
-      // Update existing
-      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance/${data[0].id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } else {
-      // Create new
-      await fetch(`https://attendance-app-r8y3.onrender.com/api/attendance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    }
-
-    console.log(`Attendance saved for ${date}`);
-  } catch (err) {
-    console.error('❌ Error saving attendance:', err);
-  }
-}
-
-
-function showAddModal() {
-  editingStudentId = null;
-  document.getElementById('modalTitle').textContent = 'Add Student';
-  document.getElementById('studentIdInput').value = '';
-  document.getElementById('studentIdInput').disabled = false;
-  document.getElementById('studentNameInput').value = '';
-  document.getElementById('studentMobileInput').value = '';
-  document.getElementById('modalErrorMsg').textContent = '';
-  document.getElementById('modalOverlay').style.display = 'flex';
-}
-
-function showEditModal(id) {
-  const s = students.find(s => s.id === id);
-  if (!s) return alert('Student not found');
-  editingStudentId = id;
-  document.getElementById('modalTitle').textContent = 'Edit Student';
-  document.getElementById('studentIdInput').value = s.id;
-  document.getElementById('studentIdInput').disabled = true;
-  document.getElementById('studentNameInput').value = s.name;
-  document.getElementById('studentMobileInput').value = s.mobile;
-  document.getElementById('modalOverlay').style.display = 'flex';
-}
-
-
-
-async function deleteStudent(id) {
-  if (!confirm('Delete this student?')) return;
-  await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${id}`, { method: 'DELETE' });
-  localStorage.setItem('updated', Date.now());  // ye line add karo
-  initAdmin();
-}
-
-function generateAllQRCodes() {
-  if (!students.length) return alert('No students found.');
-
-  const container = document.getElementById('qrCodeContainer');
-  container.innerHTML = '<h4>All Student QR Codes</h4>';
-
-  students.forEach(s => {
-    const qrData = encodeURIComponent(s.id);
-    const qrURL = `https://api.qrserver.com/v1/create-qr-code/?data=${qrData}&size=120x120`;
-
-    const cleanId = s.id.includes('/') ? s.id.split('/').pop() : s.id;
-
-    const div = document.createElement('div');
-    div.style = 'display:inline-block; text-align:center; margin:10px;';
-    div.innerHTML = `
-      <div><strong>${s.name}</strong><br>ID: ${cleanId}</div>
-      <img src="${qrURL}" id="qr_${cleanId}" alt="QR for ${s.name}" /><br/>
-      <button style="margin-top:5px;" onclick="downloadQR('${qrURL}', 'QR_${cleanId}.png')">⬇️ Download</button>
-    `;
-    container.appendChild(div);
-  });
-}
-
-function downloadQR(url, filename) {
-  fetch(url)
-    .then(res => res.blob())
-    .then(blob => {
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-    });
-}
-
-
-async function downloadAllQRAsPDF() {
-  if (!students.length) return alert('No students found.');
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-
-  let perRow = 3;
-  let rowsPerPage = 4;
-  let qrSize = 120;
-  let paddingX = 40;
-  let paddingY = 40;
-  let spacingX = 180;
-  let spacingY = 180;
-
-  let count = 0;
-
-  for (let i = 0; i < students.length; i++) {
-    const s = students[i];
-
-    const qrURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(s.id)}&size=${qrSize}x${qrSize}`;
-    const imgData = await fetch(qrURL).then(r => r.blob()).then(blob => {
-      return new Promise(res => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result);
-        fr.readAsDataURL(blob);
-      });
-    });
-
-    // Calculate X, Y based on index
-    const col = count % perRow;
-    const row = Math.floor((count % (perRow * rowsPerPage)) / perRow);
-    const x = paddingX + col * spacingX;
-    const y = paddingY + row * spacingY;
-
-    doc.addImage(imgData, 'PNG', x, y, qrSize, qrSize);
-    doc.text(`${s.name}`, x, y + qrSize + 15);
-    
-    // Show only last part of ID after last "/"
-    const cleanId = s.id.includes('/') ? s.id.split('/').pop() : s.id;
-    doc.text(`ID: ${cleanId}`, x, y + qrSize + 30);
-
-    count++;
-
-    // Add page every 12 students
-    if (count % (perRow * rowsPerPage) === 0 && i < students.length - 1) {
-      doc.addPage();
-    }
-  }
-
-  doc.save('All_QRCodes.pdf');
-}
-
-
-
-function showIndividualQRModal() {
-  const select = document.getElementById('studentQRSelect');
-  select.innerHTML = '';
-  students.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = `${s.name} (${s.id})`;
-    select.appendChild(opt);
-  });
-  document.getElementById('qrModal').style.display = 'flex';
-}
-
-function closeQRModal() {
-  document.getElementById('qrModal').style.display = 'none';
-}
-
-function generateStudentQR() {
-  const id = document.getElementById('studentQRSelect').value;
-  const s = students.find(s => s.id === id);
-  const container = document.getElementById('qrCodeContainer');
-  const qrURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(s.id)}&size=150x150`;
-
-  fetch(qrURL)
-    .then(res => res.blob())
-    .then(blob => {
-      const url = URL.createObjectURL(blob);
-
-      container.innerHTML = `
-        <h4>QR Code for ${s.name}</h4>
-        <img src="${url}" style="margin-bottom: 10px;" />
-        <p><strong>ID:</strong> ${s.id}</p>
-        <button onclick="downloadBlob('${s.name}', '${s.id}', '${url}')">⬇️ Download QR</button>
-      `;
-    });
-
-  closeQRModal();
-}
-async function loadAllAttendance() {
-  const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
-  const data = await res.json();
-  const all = {};
-  data.forEach(entry => {
-    all[entry.date] = entry.records;
-  });
-  localStorage.setItem('allAttendance', JSON.stringify(all));
-}
-
-async function initAdmin() {
-  await loadStudents();
-  await loadAttendance(); // today's
-  await loadAllAttendance(); // all dates
-  renderTable();
-  generateLiveMonthlyDashboard();
-}
-
-
-window.addEventListener('storage', function(e) {
-  if (e.key === 'students' || e.key === 'allAttendance' || e.key === 'updated') {
-    initAdmin(); // re-load attendance & student list
-  }
-});
-function downloadBlob(name, id, blobURL) {
-  const a = document.createElement('a');
-  a.href = blobURL;
-  a.download = `QR_${name.replace(/ /g, "_")}.png`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-setInterval(() => {
-  initAdmin(); // ya initIndex(); for index.html
-}, 10000); // refresh every 1 seconds
-function triggerPhotoUpload(studentId) {
-  document.getElementById(`photoInput_${studentId}`).click();
-}
-async function uploadStudentPhoto(studentId, file) {
-  if (!file) return alert("No file selected!");
-
-  const formData = new FormData();
-  formData.append('photo', file);
-
-  const encodedId = encodeURIComponent(studentId);
-
-  try {
-    const res = await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodedId}/uploadPhoto`, {
-      method: 'POST',
-      body: formData
-    });
-
-    const text = await res.text();
-    try {
-      const data = JSON.parse(text);
-      alert(data.message || 'Photo uploaded successfully!');
     } catch {
-      alert('Photo uploaded successfully!');
+      alert('Failed to export CSV.');
     }
-
-    initAdmin();
-  } catch (err) {
-    console.error('Upload failed', err);
-    alert('Photo upload failed.');
   }
-}
 
-
-async function refreshAllAttendanceFromBackend() {
-  try {
-    const res = await fetch("https://attendance-app-r8y3.onrender.com/api/attendance");
-    const data = await res.json();
-    const all = {};
-    data.forEach(entry => {
-      all[entry.date] = entry.records;
+  function generateMonthlyReport() {
+    const monthInput = document.getElementById('monthPicker').value;
+    if (!monthInput) return alert('Please select a month.');
+    const all = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+    const [year, month] = monthInput.split('-');
+    const filteredDates = Object.keys(all).filter(d => d.startsWith(`${year}-${month}`) && new Date(d).getDay() !== 0);
+    const tbody = document.getElementById('monthlyTableBody');
+    tbody.innerHTML = '';
+    students.forEach(s => {
+      let present = 0;
+      filteredDates.forEach(d => { if (all[d]?.[s.id]) present++; });
+      const total = filteredDates.length;
+      const percent = total ? ((present / total) * 100).toFixed(1) : 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHTML(s.id)}</td><td>${escapeHTML(s.name)}</td>
+        <td>${present}</td><td>${total}</td><td>${percent}%</td>
+      `;
+      tbody.appendChild(tr);
     });
-    localStorage.setItem('allAttendance', JSON.stringify(all));
-  } catch (e) {
-    console.error("Error refreshing all attendance:", e);
+    document.getElementById('monthlyTable').style.display = 'table';
   }
-}
-function closeModal() {
-  document.getElementById('modalOverlay').style.display = 'none';
-  document.getElementById('modalErrorMsg').textContent = '';
-}
 
+  function exportMonthlyCSV() {
+    const rows = [['ID', 'Name', 'Present Days', 'Total Days', 'Attendance %']];
+    const tbody = document.getElementById('monthlyTableBody');
+    for (const tr of tbody.children) {
+      const row = Array.from(tr.children).map(td => td.textContent);
+      rows.push(row);
+    }
+    if (rows.length === 1) return alert('Please generate monthly report first.');
+    const csv = rows.map(r => r.map(escapeCSV).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'monthly_attendance.csv';
+    a.click();
+  }
 
+  function showAddModal() {
+    editingStudentId = null;
+    document.getElementById('modalTitle').textContent = 'Add Student';
+    document.getElementById('studentIdInput').value = '';
+    document.getElementById('studentIdInput').disabled = false;
+    document.getElementById('studentNameInput').value = '';
+    document.getElementById('studentMobileInput').value = '';
+    document.getElementById('modalErrorMsg').textContent = '';
+    document.getElementById('modalOverlay').style.display = 'flex';
+  }
+
+  function showEditModal(id) {
+    const student = students.find(s => s.id === id);
+    if (!student) return alert('Student not found');
+    editingStudentId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Student';
+    document.getElementById('studentIdInput').value = student.id;
+    document.getElementById('studentIdInput').disabled = true;
+    document.getElementById('studentNameInput').value = student.name;
+    document.getElementById('studentMobileInput').value = student.mobile || '';
+    document.getElementById('modalErrorMsg').textContent = '';
+    document.getElementById('modalOverlay').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+  }
+
+  async function saveStudent() {
+    saveStudentBtn.disabled = true;
+    const id = document.getElementById('studentIdInput').value.trim();
+    const name = document.getElementById('studentNameInput').value.trim();
+    const mobile = document.getElementById('studentMobileInput').value.trim();
+    if (!id || !name) {
+      document.getElementById('modalErrorMsg').textContent = 'ID and Name are required';
+      saveStudentBtn.disabled = false;
+      return;
+    }
+    if (mobile && !/^\d{10}$/.test(mobile)) {
+      document.getElementById('modalErrorMsg').textContent = 'Mobile must be 10 digits';
+      saveStudentBtn.disabled = false;
+      return;
+    }
+    try {
+      if (editingStudentId) {
+        await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodeURIComponent(editingStudentId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name, mobile })
+        });
+      } else {
+        if (students.find(s => s.id === id)) {
+          document.getElementById('modalErrorMsg').textContent = 'Student ID already exists';
+          saveStudentBtn.disabled = false;
+          return;
+        }
+        await fetch('https://attendance-app-r8y3.onrender.com/api/students', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name, mobile, photo: '' })
+        });
+      }
+      await initAdmin();
+      closeModal();
+    } catch {
+      alert('Failed to save student');
+    } finally {
+      saveStudentBtn.disabled = false;
+    }
+  }
+
+  async function deleteStudent(id) {
+    if (!confirm(`Delete student ${id}? This action cannot be undone.`)) return;
+    try {
+      await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      await initAdmin();
+    } catch {
+      alert('Failed to delete student');
+    }
+  }
+
+  function triggerPhotoUpload(id) {
+    const input = document.getElementById(`photoInput_${escapeHTMLAttr(id)}`);
+    if (input) input.click();
+  }
+
+  async function uploadStudentPhoto(id, file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files allowed');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('photo', file);
+    try {
+      await fetch(`https://attendance-app-r8y3.onrender.com/api/students/${encodeURIComponent(id)}/uploadPhoto`, {
+        method: 'POST',
+        body: formData
+      });
+      alert('Photo uploaded successfully');
+      await initAdmin();
+    } catch {
+      alert('Photo upload failed');
+    }
+  }
+
+  function generateAllQRCodes() {
+    const container = document.getElementById('qrCodeContainer');
+    container.innerHTML = '';
+    students.forEach(s => {
+      const div = document.createElement('div');
+      div.style.margin = '10px';
+      div.style.display = 'inline-block';
+      div.style.textAlign = 'center';
+      const qrId = s.id.includes('/') ? s.id.split('/').pop() : s.id;
+      const url = `https://qr-attendance.web.app/?id=${encodeURIComponent(qrId)}`;
+      new QRCode(div, { text: url, width: 128, height: 128 });
+      const label = document.createElement('div');
+      label.textContent = `${s.name} (${qrId})`;
+      div.appendChild(label);
+      container.appendChild(div);
+    });
+  }
+
+  async function downloadAllQRAsPDF() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    let y = 10;
+    for (const s of students) {
+      const qrId = s.id.includes('/') ? s.id.split('/').pop() : s.id;
+      const url = `https://qr-attendance.web.app/?id=${encodeURIComponent(qrId)}`;
+      const qrDiv = document.createElement('div');
+      new QRCode(qrDiv, { text: url, width: 128, height: 128 });
+      await new Promise(res => setTimeout(res, 300));
+      const canvas = qrDiv.querySelector('canvas');
+      if (!canvas) continue;
+      const imgData = canvas.toDataURL('image/png');
+      if (y + 60 > pdf.internal.pageSize.height) {
+        pdf.addPage();
+        y = 10;
+      }
+      pdf.text(`${s.name} (${qrId})`, 10, y + 10);
+      pdf.addImage(imgData, 'PNG', 10, y + 15, 40, 40);
+      y += 60;
+    }
+    pdf.save('all_qr_codes.pdf');
+  }
+
+  function showIndividualQRModal() {
+    const select = document.getElementById('studentQRSelect');
+    select.innerHTML = '';
+    students.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.id;
+      option.textContent = `${s.name} (${s.id})`;
+      select.appendChild(option);
+    });
+    document.getElementById('qrModal').style.display = 'flex';
+  }
+
+  function closeQRModal() {
+    document.getElementById('qrModal').style.display = 'none';
+    document.getElementById('qrCodeContainer').innerHTML = '';
+  }
+
+  function generateStudentQR() {
+    const select = document.getElementById('studentQRSelect');
+    const id = select.value;
+    if (!id) return alert('Please select a student');
+    const student = students.find(s => s.id === id);
+    if (!student) return alert('Student not found');
+    const qrId = student.id.includes('/') ? student.id.split('/').pop() : student.id;
+    const url = `https://qr-attendance.web.app/?id=${encodeURIComponent(qrId)}`;
+    const container = document.getElementById('qrCodeContainer');
+    container.innerHTML = '';
+    new QRCode(container, { text: url, width: 256, height: 256 });
+  }
+
+  function generateLiveMonthlyDashboard() {
+    const monthInput = document.getElementById('monthPicker').value || todayDate.slice(0, 7);
+    const [year, month] = monthInput.split('-');
+    const allAttendance = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+    const datesInMonth = [];
+    const daysInMonth = new Date(year, month, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${month.padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dayOfWeek = new Date(dateStr).getDay();
+      if (dayOfWeek === 0) continue;
+      datesInMonth.push(dateStr);
+    }
+    const thead = document.getElementById('liveTableHead');
+    thead.innerHTML = '';
+    const headerRow = document.createElement('tr');
+    headerRow.innerHTML = '<th>ID</th><th>Name</th>' + datesInMonth.map(d => `<th>${d.slice(-2)}</th>`).join('');
+    thead.appendChild(headerRow);
+
+    const tbody = document.getElementById('liveTableBody');
+    tbody.innerHTML = '';
+    students.forEach(s => {
+      const tr = document.createElement('tr');
+      const cells = [`<td>${escapeHTML(s.id)}</td>`, `<td>${escapeHTML(s.name)}</td>`];
+      datesInMonth.forEach(date => {
+        const present = allAttendance[date]?.[s.id] ? true : false;
+        cells.push(`<td class="${present ? 'present' : 'absent'}" onclick="toggleLiveAttendance('${escapeJS(s.id)}', '${date}')">${present ? '✔️' : '❌'}</td>`);
+      });
+      tr.innerHTML = cells.join('');
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function toggleLiveAttendance(id, date) {
+    const allAttendance = JSON.parse(localStorage.getItem('allAttendance') || '{}');
+    if (!allAttendance[date]) allAttendance[date] = {};
+    if (allAttendance[date][id]) delete allAttendance[date][id];
+    else allAttendance[date][id] = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    localStorage.setItem('allAttendance', JSON.stringify(allAttendance));
+    await saveAttendanceForDate(date, allAttendance[date]);
+    generateLiveMonthlyDashboard();
+    if (date === todayDate) {
+      attendance = allAttendance[date];
+      renderTable();
+    }
+  }
+
+  async function initAdmin() {
+    await loadStudents();
+    await loadAllAttendance();
+    await loadAttendance();
+    renderTable();
+    generateLiveMonthlyDashboard();
+    populateStudentQRSelect();
+    document.getElementById('viewDate').value = todayDate;
+  }
+
+  function populateStudentQRSelect() {
+    const select = document.getElementById('studentQRSelect');
+    select.innerHTML = '';
+    students.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.id;
+      option.textContent = `${s.name} (${s.id})`;
+      select.appendChild(option);
+    });
+  }
+
+  setInterval(() => {
+    if (document.getElementById('adminContent').style.display === 'block') {
+      initAdmin();
+    }
+  }, 30000);
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'updated') {
+      initAdmin();
+    }
+  });
+
+  window.checkPassword = checkPassword;
+  window.logout = logout;
+  window.toggleAttendance = toggleAttendance;
+  window.viewAttendanceByDate = viewAttendanceByDate;
+  window.exportAttendanceByDate = exportAttendanceByDate;
+  window.generateMonthlyReport = generateMonthlyReport;
+  window.exportMonthlyCSV = exportMonthlyCSV;
+  window.showAddModal = showAddModal;
+  window.showEditModal = showEditModal;
+  window.closeModal = closeModal;
+  window.saveStudent = saveStudent;
+  window.deleteStudent = deleteStudent;
+  window.triggerPhotoUpload = triggerPhotoUpload;
+  window.uploadStudentPhoto = uploadStudentPhoto;
+  window.generateAllQRCodes = generateAllQRCodes;
+  window.downloadAllQRAsPDF = downloadAllQRAsPDF;
+  window.showIndividualQRModal = showIndividualQRModal;
+  window.closeQRModal = closeQRModal;
+  window.generateStudentQR = generateStudentQR;
+  window.generateLiveMonthlyDashboard = generateLiveMonthlyDashboard;
+  window.toggleLiveAttendance = toggleLiveAttendance;
+
+})();
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 </body>
 </html>

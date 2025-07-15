@@ -103,7 +103,6 @@
   <h3>📲 QR Code Generator</h3>
   <button onclick="generateAllQRCodes()">Generate All QR Codes</button>
   <button onclick="downloadAllQRAsPDF()">⬇️ Download All QR PDF</button>
-  <button onclick="showIndividualQRModal()">Generate Individual QR</button>
   <div id="qrCodeContainer" style="margin-top: 20px;"></div>
 
   <!-- Student Table -->
@@ -681,42 +680,60 @@
   }
 
   // 18. Generate all QR codes
- async function generateAllQRCodes() {
-    const container = document.getElementById('qrCodesContainer');
-    container.innerHTML = '';
+async function generateAllQRCodes() {
+  const container = document.getElementById('qrCodeContainer');
+  container.innerHTML = '';
 
-    const res = await fetch(`${BASE_URL}/api/students`);
-    const students = await res.json();
+  const res = await fetch(`${BASE_URL}/api/students`);
+  const studentList = await res.json();
 
-    for (let student of students) {
-      const div = document.createElement('div');
-      div.style.margin = '20px';
-      div.style.padding = '10px';
-      div.style.border = '1px solid #ccc';
-      div.style.display = 'inline-block';
-      div.style.textAlign = 'center';
+  for (let student of studentList) {
+    const wrapper = document.createElement('div');
+    wrapper.style.margin = '10px';
+    wrapper.style.padding = '10px';
+    wrapper.style.border = '1px solid #ccc';
+    wrapper.style.borderRadius = '8px';
+    wrapper.style.display = 'inline-block';
+    wrapper.style.textAlign = 'center';
+    wrapper.style.background = '#fff';
 
-      const qrCanvas = document.createElement('canvas');
-      await QRCode.toCanvas(qrCanvas, student.id);
+    const qrCanvas = document.createElement('canvas');
+    await new Promise(resolve => {
+      const qr = new QRCode(document.createElement('div'), {
+        text: student.id,
+        width: 150,
+        height: 150,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      setTimeout(() => {
+        const canvas = qr._el.querySelector('canvas');
+        qrCanvas.getContext('2d').drawImage(canvas, 0, 0);
+        qrCanvas.width = canvas.width;
+        qrCanvas.height = canvas.height;
+        qrCanvas.getContext('2d').drawImage(canvas, 0, 0);
+        resolve();
+      }, 100);
+    });
 
-      const name = document.createElement('p');
-      name.textContent = `${student.name} (${student.id})`;
+    const name = document.createElement('p');
+    name.textContent = `${student.name} (${student.id})`;
 
-      const btn = document.createElement('button');
-      btn.textContent = '📥 Download PNG';
-      btn.onclick = () => {
-        const link = document.createElement('a');
-        link.download = `${student.id}_QR.png`;
-        link.href = qrCanvas.toDataURL('image/png');
-        link.click();
-      };
+    const downloadBtn = document.createElement('button');
+    downloadBtn.textContent = '📥 Download PNG';
+    downloadBtn.onclick = () => {
+      const link = document.createElement('a');
+      link.download = `${student.id}_QR.png`;
+      link.href = qrCanvas.toDataURL('image/png');
+      link.click();
+    };
 
-      div.appendChild(qrCanvas);
-      div.appendChild(name);
-      div.appendChild(btn);
-      container.appendChild(div);
-    }
+    wrapper.appendChild(qrCanvas);
+    wrapper.appendChild(name);
+    wrapper.appendChild(downloadBtn);
+    container.appendChild(wrapper);
   }
+}
+
 
   // 19. Download all QR as PDF (using jsPDF)
   async function downloadAllQRAsPDF() {

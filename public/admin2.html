@@ -156,6 +156,7 @@
   let todayDate = new Date().toISOString().split('T')[0];
   let editingStudentId = null;
 
+
   const saveStudentBtn = document.getElementById('saveStudentBtn');
 
   // Escaping helpers
@@ -175,7 +176,7 @@
     return `"${value.replace(/"/g, '""')}"`;
   }
 
-  // 1. Login
+ // 1. Login
   function checkPassword() {
     const pass = document.getElementById('adminPass').value;
     if (pass === ADMIN_PASSWORD) {
@@ -254,7 +255,7 @@
     }
   }
 
-  // 6. Save today's attendance
+ // 6. Save today's attendance - Yahan add kiya hai localStorage update
   async function saveAttendance() {
     const res = await fetch(`${BASE_URL}/api/attendance?date=${encodeURIComponent(todayDate)}`);
     const data = await res.json();
@@ -276,7 +277,9 @@
     await loadAttendance();
     renderTable();
     generateLiveMonthlyDashboard();
-    localStorage.setItem('updated', Date.now());
+
+    // *** Add this line to notify other tabs/dashboard ***
+    localStorage.setItem('attendanceUpdated', Date.now().toString());
   }
 
   // 7. Render student table
@@ -443,7 +446,7 @@
     document.getElementById('modalOverlay').style.display = 'none';
   }
 
-  // 14. Save student (Add/Edit)
+ // 14. Save student (Add/Edit) - localStorage update add kiya
   async function saveStudent() {
     const id = document.getElementById('studentIdInput').value.trim();
     const name = document.getElementById('studentNameInput').value.trim();
@@ -474,6 +477,9 @@
         await loadStudents();
         renderTable();
         closeModal();
+
+        // *** Notify other tabs/dashboard ***
+        localStorage.setItem('attendanceUpdated', Date.now().toString());
       } catch (e) {
         document.getElementById('modalErrorMsg').textContent = e.message;
       }
@@ -489,13 +495,16 @@
         await loadStudents();
         renderTable();
         closeModal();
+
+        // *** Notify other tabs/dashboard ***
+        localStorage.setItem('attendanceUpdated', Date.now().toString());
       } catch (e) {
         document.getElementById('modalErrorMsg').textContent = e.message;
       }
     }
   }
 
-  // 15. Delete student
+ // 15. Delete student - localStorage update add kiya
   async function deleteStudent(id) {
     if (!confirm('Are you sure to delete this student?')) return;
     try {
@@ -503,6 +512,9 @@
       if (!res.ok) throw new Error('Failed to delete student');
       await loadStudents();
       renderTable();
+
+      // *** Notify other tabs/dashboard ***
+      localStorage.setItem('attendanceUpdated', Date.now().toString());
     } catch (e) {
       alert(e.message);
     }
@@ -759,7 +771,7 @@
 }
 
 
-  // 22. Initialize admin panel
+ // 22. Initialize admin panel
   async function initAdmin() {
     await loadStudents();
     await loadAllAttendance();
@@ -768,7 +780,7 @@
     generateLiveMonthlyDashboard();
   }
 
-  // Expose functions globally for inline HTML usage
+  // Global expose
   window.checkPassword = checkPassword;
   window.logout = logout;
   window.showAddModal = showAddModal;

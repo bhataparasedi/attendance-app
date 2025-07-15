@@ -132,32 +132,31 @@
       }
     }
 
-  function renderStudentCards() {
-  const container = document.getElementById('studentCards');
-  container.innerHTML = '';
-  students.forEach(s => {
-    const present = attendanceRecords[s.id];
+    function renderStudentCards() {
+      const container = document.getElementById('studentCards');
+      container.innerHTML = '';
+      students.forEach(s => {
+        const present = attendanceRecords[s.id];
 
-    // Use full URL for photo or default avatar if no photo
-    const photoUrl = s.photo
-      ? (s.photo.startsWith('http') || s.photo.startsWith('/uploads')
-         ? `${BASE_URL}${s.photo}`
-         : s.photo)
-      : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // default avatar
+        // Use full URL for photo or default avatar if no photo
+        const photoUrl = s.photo
+          ? (s.photo.startsWith('http') || s.photo.startsWith('/uploads')
+             ? `${BASE_URL}${s.photo}`
+             : s.photo)
+          : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // default avatar
 
-    const card = document.createElement('div');
-    card.className = 'card ' + (present ? 'present' : 'absent');
-    card.innerHTML = `
-      <img src="${photoUrl}" alt="photo" width="80" height="80" />
-      <h3>${s.name}</h3>
-      <p>ID: ${s.id}</p>
-      <p>📞 ${s.mobile}</p>
-      <p><strong>Status Today:</strong> ${present ? '✅ Present' : '❌ Absent'}</p>
-    `;
-    container.appendChild(card);
-  });
-}
-
+        const card = document.createElement('div');
+        card.className = 'card ' + (present ? 'present' : 'absent');
+        card.innerHTML = `
+          <img src="${photoUrl}" alt="photo" width="80" height="80" />
+          <h3>${s.name}</h3>
+          <p>ID: ${s.id}</p>
+          <p>📞 ${s.mobile}</p>
+          <p><strong>Status Today:</strong> ${present ? '✅ Present' : '❌ Absent'}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
 
     function renderMonthlyTable() {
       const container = document.getElementById('monthlyTable');
@@ -231,6 +230,9 @@
       renderStudentCards();
       statusDiv.textContent = `✅ ${student.name} marked present at ${now}`;
       statusDiv.style.color = 'green';
+
+      // Notify other tabs about the update
+      localStorage.setItem('updated', Date.now());
     }
 
     function exportCSV() {
@@ -283,12 +285,24 @@
       document.body.removeChild(link);
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
+    // Reload data and rerender everything
+    async function reloadData() {
       await loadStudents();
       await loadAttendance();
       await loadMonthlyAttendance();
       renderStudentCards();
       renderMonthlyTable();
+    }
+
+    // Listen for localStorage changes to update data live
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'updated') {
+        reloadData();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await reloadData();
 
       const input = document.getElementById('qrInput');
       input.addEventListener('keydown', async (e) => {
@@ -297,7 +311,23 @@
           input.value = '';
         }
       });
+
+      // Optional: fallback auto reload every 15 seconds to ensure sync
+      setInterval(() => {
+        reloadData();
+      }, 15000);
     });
+    window.addEventListener('storage', async (event) => {
+  if (event.key === 'attendanceUpdated') {
+    console.log('Attendance updated detected via localStorage');
+    await loadStudents();
+    await loadAttendance();
+    await loadMonthlyAttendance();
+    renderStudentCards();
+    renderMonthlyTable();
+  }
+});
+
   </script>
 </body>
 </html>

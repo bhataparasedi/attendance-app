@@ -297,16 +297,18 @@
   }
 
   // 1. Login
-  function checkPassword() {
-    const pass = document.getElementById('adminPass').value;
-    if (pass === ADMIN_PASSWORD) {
-      document.getElementById('loginDiv').style.display = 'none';
-      document.getElementById('adminContent').style.display = 'block';
-      initAdmin();
-    } else {
-      document.getElementById('loginMsg').textContent = 'Incorrect password!';
-    }
+ function checkPassword() {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === 'teacher123') {
+    document.getElementById('loginDiv').style.display = 'none';
+    document.getElementById('adminContent').style.display = 'block';
+  } else {
+    alert('Incorrect password');
   }
+}
+
+// Make it global
+window.checkPassword = checkPassword;
 
   function logout() {
     document.getElementById('adminContent').style.display = 'none';

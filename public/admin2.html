@@ -160,15 +160,7 @@
   </div>
 </div>
 
-<!-- 🎯 Individual QR Modal -->
-<div id="qrModal">
-  <div id="qrModalContent">
-    <h3>Generate Individual QR</h3>
-    <select id="studentQRSelect"></select>
-    <button onclick="generateStudentQR()">Generate</button>
-    <button onclick="closeQRModal()" style="margin-top:10px;">Close</button>
-  </div>
-</div>
+
 
 <script>
 (() => {
@@ -758,40 +750,6 @@
       hideLoading();
     }
   }
-
-  // 20. Individual QR modal
-  const qrModal = document.getElementById('qrModal');
-  const studentQRSelect = document.getElementById('studentQRSelect');
-
-  function showIndividualQRModal() {
-    if (!students.length) return alert('No students found');
-    studentQRSelect.innerHTML = '';
-    students.forEach(s => {
-      const option = document.createElement('option');
-      option.value = s.id;
-      option.textContent = s.id + ' - ' + s.name;
-      studentQRSelect.appendChild(option);
-    });
-    qrModal.style.display = 'flex';
-  }
-
-  function closeQRModal() {
-    qrModal.style.display = 'none';
-    document.getElementById('qrCodeContainer').innerHTML = '';
-  }
-
-  function generateStudentQR() {
-    const id = studentQRSelect.value;
-    if (!id) return alert('Select a student');
-    const container = document.getElementById('qrCodeContainer');
-    container.innerHTML = '';
-    new QRCode(container, {
-      text: id,
-      width: 256,
-      height: 256,
-    });
-  }
-
   // 21. Initialization
   async function initAdmin() {
     showLoading();

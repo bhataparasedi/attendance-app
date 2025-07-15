@@ -152,7 +152,7 @@
 <!-- 🔐 Login Panel -->
 <div id="loginDiv">
   <h2>Admin Login</h2>
-  <input type="password" id="adminPass" placeholder="Enter Admin Password" />
+ <button id="loginBtn" onclick="checkPassword()">Login</button>
   <button onclick="checkPassword(); console.log('Login triggered');">Login</button>
   <p id="loginMsg" style="color:red;"></p>
 </div>
@@ -317,18 +317,22 @@ function checkPassword() {
 
   // 2. Load students
   async function loadStudents() {
-    showLoading();
-    try {
-      const res = await fetch(`${BASE_URL}/api/students`);
-      if (!res.ok) throw new Error('Failed to load students');
-      students = await res.json();
-    } catch {
-      showToast('Failed to load students.', 'error');
-      students = [];
-    } finally {
-      hideLoading();
-    }
+  showLoading();
+  try {
+    const res = await fetch(`${BASE_URL}/api/students`);
+    console.log("Students fetch status:", res.status);
+    if (!res.ok) throw new Error('Failed to load students');
+    students = await res.json();
+    console.log("Loaded students:", students);
+  } catch (err) {
+    console.error("Error loading students:", err);
+    showToast('Failed to load students.', 'error');
+    students = [];
+  } finally {
+    hideLoading();
   }
+}
+
 
   // 3. Load attendance for today (and store all)
   async function loadAttendance() {

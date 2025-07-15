@@ -224,6 +224,8 @@
     <input type="text" id="studentIdInput" placeholder="Student ID (unique)" />
     <input type="text" id="studentNameInput" placeholder="Student Name" />
     <input type="text" id="studentMobileInput" placeholder="Mobile Number" />
+    <input type="file" id="studentPhotoInput" accept="image/*" />
+
     <div style="text-align:right; margin-top:10px;">
       <button onclick="closeModal()">Cancel</button>
       <button id="saveStudentBtn" onclick="saveStudent()">Save</button>
@@ -665,6 +667,8 @@ const daysInMonth = uniqueDates.filter(dateStr => {
         tbody.appendChild(tr);
       });
       document.getElementById('monthlyTable').style.display = 'table';
+      renderLiveMonthlyTable();
+
     } catch {
       showToast('Failed to generate monthly report', 'error');
     } finally {
@@ -750,6 +754,82 @@ function renderLiveMonthlyTable() {
     const day = new Date(dayStr).getDay();
     if (day !== 0) dates.push(dayStr); // skip Sundays
   }
+async function saveStudent() {
+  setButtonLoading(saveStudentBtn, true);
+  try {
+    const id = document.getElementById('studentIdInput').value.trim();
+    const name = document.getElementById('studentNameInput').value.trim();
+    const mobile = document.getElementById('studentMobileInput').value.trim();
+
+    if (!id || !name || !mobile) {
+      document.getElementById('modalErrorMsg').textContent = 'All fields are required.';
+      setButtonLoading(saveStudentBtn, false);
+      return;
+    }
+
+    // Photo file check
+    const photoFile = document.getElementById('studentPhotoInput').files[0];
+    let photoURL = students.find(s => s.id === editingStudentId)?.photo || '';
+
+    if (photoFile) {
+      const formData = new FormData();
+      formData.append('photo', photoFile);
+
+      const uploadRes = await fetch(`${BASE_URL}/api/students/${encodeURIComponent(id)}/uploadPhoto`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (uploadRes.ok) {
+        const uploaded = await uploadRes.json();
+        photoURL = uploaded.photo || '';
+      } else {
+        showToast('Photo upload failed', 'error');
+      }
+    }
+
+    if (editingStudentId === null) {
+      // Add new student
+      if (students.find(s => s.id === id)) {
+        document.getElementById('modalErrorMsg').textContent = 'Student ID already exists.';
+        setButtonLoading(saveStudentBtn, false);
+        return;
+      }
+      const res = await fetch(`${BASE_URL}/api/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name, mobile, photo: photoURL })
+      });
+      if (!res.ok) throw new Error('Failed to add student');
+      students.push({ id, name, mobile, photo: photoURL });
+      showToast('Student added successfully', 'success');
+    } else {
+      // Edit existing student
+      const res = await fetch(`${BASE_URL}/api/students/${encodeURIComponent(editingStudentId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name, mobile, photo: photoURL })
+      });
+      if (!res.ok) throw new Error('Failed to update student');
+      const idx = students.findIndex(s => s.id === editingStudentId);
+      if (idx !== -1) {
+        students[idx].name = name;
+        students[idx].mobile = mobile;
+        students[idx].photo = photoURL;
+      }
+      showToast('Student updated successfully', 'success');
+    }
+
+    closeModal();
+    renderTable();
+
+  } catch (e) {
+    document.getElementById('modalErrorMsg').textContent = e.message || 'Failed to save student';
+    showToast('Error saving student', 'error');
+  } finally {
+    setButtonLoading(saveStudentBtn, false);
+  }
+}
 
   // Table Head
   tableHead.innerHTML = `<tr>

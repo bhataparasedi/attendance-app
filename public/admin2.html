@@ -809,7 +809,10 @@ function renderLiveMonthlyTable() {
 }
 
   // Attach functions to window for inline onclick usage
+  document.addEventListener('DOMContentLoaded', () => {
   window.checkPassword = checkPassword;
+});
+
   window.logout = logout;
   window.viewAttendanceByDate = viewAttendanceByDate;
   window.showAddModal = showAddModal;

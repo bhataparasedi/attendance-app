@@ -845,6 +845,28 @@ async function saveStudent() {
     });
     return `<tr>${row.join('')}</tr>`;
   }).join('');
+function checkPassword() {
+  const pass = document.getElementById('adminPass').value;
+  if (pass === 'teacher123') {
+    document.getElementById('loginDiv').style.display = 'none';
+    document.getElementById('adminContent').style.display = 'block';
+    
+    // ✅ Call this function to actually load student + attendance data
+    initAdmin();
+  } else {
+    alert('Incorrect password');
+  }
+}
+async function initAdmin() {
+  console.log("🔄 Loading students and attendance...");
+  await loadStudents();
+  console.log("✅ Students loaded:", students);
+
+  await loadAttendance();
+  console.log("✅ Attendance loaded:", attendance);
+
+  renderTable();
+}
 
   // Listener to save when cell edited
   tableBody.querySelectorAll('td[contenteditable="true"]').forEach(cell => {

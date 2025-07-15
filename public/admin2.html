@@ -7,6 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/browser-image-compression@1.0.15/dist/browser-image-compression.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -504,32 +505,43 @@
   function triggerPhotoUpload(id) {
     document.getElementById(`photoInput_${id}`).click();
   }
-  async function uploadStudentPhoto(id, inputElem) {
-    const file = inputElem.files[0];
-    if (!file) return;
+ async function uploadStudentPhoto(id, inputElem) {
+  const file = inputElem.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const base64 = e.target.result;
-      try {
-        const student = students.find(s => s.id === id);
-        if (!student) return alert('Student not found');
-
-        student.photo = base64;
-        const res = await fetch(`${BASE_URL}/api/students/${encodeURIComponent(id)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(student)
-        });
-        if (!res.ok) throw new Error('Failed to upload photo');
-        await loadStudents();
-        renderTable();
-      } catch (e) {
-        alert(e.message);
-      }
+  try {
+    // ✅ Compress the image first
+    const options = {
+      maxSizeMB: 0.2,            // Target size < 200KB
+      maxWidthOrHeight: 600,     // Resize max dimension to 600px
+      useWebWorker: true
     };
-    reader.readAsDataURL(file);
+    const compressedFile = await imageCompression(file, options);
+
+    // ✅ Convert compressed image to base64
+    const base64 = await imageCompression.getDataUrlFromFile(compressedFile);
+
+    // ✅ Update student data with compressed base64
+    const student = students.find(s => s.id === id);
+    if (!student) return alert('Student not found');
+
+    student.photo = base64;
+
+    const res = await fetch(`${BASE_URL}/api/students/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(student)
+    });
+
+    if (!res.ok) throw new Error('Failed to upload photo');
+
+    await loadStudents();
+    renderTable();
+  } catch (e) {
+    alert('Upload failed: ' + e.message);
   }
+}
+
 
   // 17. QR Code generation for all students
   function generateAllQRCodes() {

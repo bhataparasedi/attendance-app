@@ -689,26 +689,41 @@
   }
 
   // 18. Generate all QR codes
-  function generateAllQRCodes() {
-    const container = document.getElementById('qrCodeContainer');
+ async function generateAllQRCodes() {
+    const container = document.getElementById('qrCodesContainer');
     container.innerHTML = '';
-    students.forEach(student => {
+
+    const res = await fetch(`${BASE_URL}/api/students`);
+    const students = await res.json();
+
+    for (let student of students) {
       const div = document.createElement('div');
+      div.style.margin = '20px';
+      div.style.padding = '10px';
+      div.style.border = '1px solid #ccc';
       div.style.display = 'inline-block';
-      div.style.margin = '10px';
       div.style.textAlign = 'center';
-      const qrDiv = document.createElement('div');
-      div.appendChild(qrDiv);
-      new QRCode(qrDiv, {
-        text: student.id,
-        width: 128,
-        height: 128,
-      });
-      const label = document.createElement('div');
-      label.textContent = student.id;
-      div.appendChild(label);
+
+      const qrCanvas = document.createElement('canvas');
+      await QRCode.toCanvas(qrCanvas, student.id);
+
+      const name = document.createElement('p');
+      name.textContent = `${student.name} (${student.id})`;
+
+      const btn = document.createElement('button');
+      btn.textContent = '📥 Download PNG';
+      btn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = `${student.id}_QR.png`;
+        link.href = qrCanvas.toDataURL('image/png');
+        link.click();
+      };
+
+      div.appendChild(qrCanvas);
+      div.appendChild(name);
+      div.appendChild(btn);
       container.appendChild(div);
-    });
+    }
   }
 
   // 19. Download all QR as PDF (using jsPDF)

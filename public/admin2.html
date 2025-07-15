@@ -297,7 +297,7 @@
   }
 
   // 1. Login
- function checkPassword() {
+function checkPassword() {
   const pass = document.getElementById('adminPass').value;
   if (pass === 'teacher123') {
     document.getElementById('loginDiv').style.display = 'none';
@@ -307,8 +307,6 @@
   }
 }
 
-// Make it global
-window.checkPassword = checkPassword;
 
   function logout() {
     document.getElementById('adminContent').style.display = 'none';
@@ -890,11 +888,11 @@ async function saveStudent() {
   });
 }
 
-  // Attach functions to window for inline onclick usage
-  document.addEventListener('DOMContentLoaded', () => {
-  window.checkPassword = checkPassword;
-});
 
+ 
+document.addEventListener('DOMContentLoaded', () => {
+  // Assign all your functions to window here
+  window.checkPassword = checkPassword;
   window.logout = logout;
   window.viewAttendanceByDate = viewAttendanceByDate;
   window.showAddModal = showAddModal;
@@ -910,21 +908,20 @@ async function saveStudent() {
   window.exportMonthlyCSV = exportMonthlyCSV;
 
   // Ripple effect on all buttons
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('button').forEach(btn => {
-      btn.classList.add('ripple');
-      btn.addEventListener('click', function(e) {
-        const ripple = document.createElement('span');
-        ripple.classList.add('ripple-effect');
-        const rect = btn.getBoundingClientRect();
-        ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px';
-        ripple.style.left = e.clientX - rect.left - (parseInt(ripple.style.width)/2) + 'px';
-        ripple.style.top = e.clientY - rect.top - (parseInt(ripple.style.height)/2) + 'px';
-        btn.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 600);
-      });
+  document.querySelectorAll('button').forEach(btn => {
+    btn.classList.add('ripple');
+    btn.addEventListener('click', function(e) {
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple-effect');
+      const rect = btn.getBoundingClientRect();
+      ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px';
+      ripple.style.left = e.clientX - rect.left - (parseInt(ripple.style.width)/2) + 'px';
+      ripple.style.top = e.clientY - rect.top - (parseInt(ripple.style.height)/2) + 'px';
+      btn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
     });
   });
+});
 })();
 </script>
 

@@ -717,16 +717,15 @@ const daysInMonth = uniqueDates.filter(dateStr => {
   async function uploadStudentPhoto(studentId, fileInput) {
   const file = fileInput.files[0];
   if (!file) return alert('Please select a photo to upload.');
+const formData = new FormData();
+formData.append('photo', file);
 
-  const formData = new FormData();
-  formData.append('photo', file);
-
-  try {
-    const res = await fetch(${BASE_URL}/api/students/${studentId}/uploadPhoto, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!res.ok) throw new Error('Upload failed');
+try {
+  const res = await fetch(`${BASE_URL}/api/students/${studentId}/uploadPhoto`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) throw new Error('Upload failed');
 
     const data = await res.json();
     alert('Photo uploaded successfully!');

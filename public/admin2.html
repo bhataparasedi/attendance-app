@@ -176,7 +176,6 @@
   <h3>📲 QR Code Generator</h3>
   <button onclick="generateAllQRCodes()">Generate All QR Codes</button>
   <button onclick="downloadAllQRAsPDF()">⬇️ Download All QR PDF</button>
-  <button onclick="showIndividualQRModal()">Generate Individual QR</button>
   <div id="qrCodeContainer" style="margin-top: 20px;"></div>
 
   <!-- Student Table -->
@@ -638,11 +637,15 @@
       // Filter for month YYYY-MM
       const filtered = attData.filter(a => a.date.startsWith(month));
       // Map studentId -> present count & total days
-      const daysInMonth = new Set(filtered.map(a => a.date));
+    const uniqueDates = [...new Set(filtered.map(a => a.date))];
+const daysInMonth = uniqueDates.filter(dateStr => {
+  const d = new Date(dateStr);
+  return d.getDay() !== 0; // Exclude Sundays
+});
       const report = students.map(s => {
         const records = filtered.filter(a => a.studentId === s.id);
         const presentCount = records.filter(r => r.status === 'present').length;
-        const totalDays = daysInMonth.size;
+        const totalDays = daysInMonth.length;
         const percentage = totalDays > 0 ? ((presentCount / totalDays) * 100).toFixed(2) : '0.00';
         return { id: s.id, name: s.name, presentCount, totalDays, percentage };
       });

@@ -710,6 +710,103 @@ const daysInMonth = uniqueDates.filter(dateStr => {
     await loadAttendance();
     renderTable();
   }
+  async function uploadStudentPhoto(studentId, fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return alert('Please select a photo to upload.');
+
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  try {
+    const res = await fetch(${BASE_URL}/api/students/${studentId}/uploadPhoto, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+
+    const data = await res.json();
+    alert('Photo uploaded successfully!');
+
+    // Refresh student list or photo display as needed
+    loadStudents();
+  } catch (err) {
+    alert('Photo upload error: ' + err.message);
+  }
+}
+function renderLiveMonthlyTable() {
+  const tableHead = document.getElementById('liveTableHead');
+  const tableBody = document.getElementById('liveTableBody');
+  const month = document.getElementById('monthPicker').value;
+
+  if (!month) {
+    showToast('Please select a month.', 'error');
+    return;
+  }
+
+  const daysInMonth = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
+  const dates = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayStr = `${month}-${String(d).padStart(2, '0')}`;
+    const day = new Date(dayStr).getDay();
+    if (day !== 0) dates.push(dayStr); // skip Sundays
+  }
+
+  // Table Head
+  tableHead.innerHTML = `<tr>
+    <th>ID</th><th>Name</th>
+    ${dates.map(d => `<th>${d.split('-')[2]}</th>`).join('')}
+  </tr>`;
+
+  // Table Body
+  tableBody.innerHTML = students.map(student => {
+    const row = [`<td>${escapeHTML(student.id)}</td>`, `<td>${escapeHTML(student.name)}</td>`];
+    dates.forEach(date => {
+      const status = attendance[date]?.[student.id] || '';
+      row.push(`<td contenteditable="true" data-date="${date}" data-id="${student.id}">${status}</td>`);
+    });
+    return `<tr>${row.join('')}</tr>`;
+  }).join('');
+
+  // Listener to save when cell edited
+  tableBody.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+    cell.addEventListener('blur', async () => {
+      const studentId = cell.dataset.id;
+      const date = cell.dataset.date;
+      const status = cell.innerText.trim().toLowerCase();
+
+      if (!['present', 'absent'].includes(status)) {
+        showToast('Enter "present" or "absent" only.', 'error');
+        cell.innerText = attendance[date]?.[studentId] || '';
+        return;
+      }
+
+      const payload = { date, studentId, status };
+      const existing = await fetch(`${BASE_URL}/api/attendance?date=${date}&studentId=${studentId}`);
+      const data = await existing.json();
+
+      if (data.length > 0) {
+        // update
+        await fetch(`${BASE_URL}/api/attendance/${data[0].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // new
+        await fetch(`${BASE_URL}/api/attendance`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      showToast(`Attendance updated for ${date}`, 'success');
+      // update local cache
+      if (!attendance[date]) attendance[date] = {};
+      attendance[date][studentId] = status;
+    });
+  });
+}
 
   // Attach functions to window for inline onclick usage
   window.checkPassword = checkPassword;

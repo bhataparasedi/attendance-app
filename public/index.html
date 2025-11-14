@@ -36,10 +36,10 @@
 <body>
   <h1>📅 Attendance Dashboard</h1>
 
-  <div id="loadingIndicator" style="display:none; margin: 20px auto; text-align:center;">
-    <div style="margin:auto; width:40px; height:40px; border:5px solid #ccc; border-top-color:#007bff; border-radius:50%; animation: spin 1s linear infinite;"></div>
-    <div>Loading data, please wait...</div>
-  </div>
+ // <div id="loadingIndicator" style="display:none; margin: 20px auto; text-align:center;">
+    // <div style="margin:auto; width:40px; height:40px; border:5px solid #ccc; border-top-color:#007bff; border-radius:50%; animation: spin 1s linear infinite;"></div>
+    // <div>Loading data, please wait...</div>
+  // </div>
 
   <input type="text" id="qrInput" placeholder="Click here then Scan QR Code ..." autofocus />
   <div id="status"></div>
@@ -68,13 +68,13 @@
     const studentCardsDiv = document.getElementById('studentCards');
     const monthlyTableDiv = document.getElementById('monthlyTable');
 
-    function showLoading() {
+    //function showLoading() {
       loadingDiv.style.display = 'block';
       studentCardsDiv.style.display = 'none';
       monthlyTableDiv.style.display = 'none';
     }
 
-    function hideLoading() {
+   // function hideLoading() {
       loadingDiv.style.display = 'none';
       studentCardsDiv.style.display = 'block';
       monthlyTableDiv.style.display = 'block';
@@ -312,13 +312,12 @@
 
     // Reload data and rerender everything
     async function reloadData() {
-      showLoading();
-      await loadStudents();
-      await loadAttendance();
-      await loadMonthlyAttendance();
-      renderStudentCards();
-      renderMonthlyTable();
-      hideLoading();
+   await loadStudents();
+await loadAttendance();
+await loadMonthlyAttendance();
+renderStudentCards();
+renderMonthlyTable();
+
     }
 
     // Listen for localStorage changes to update data live
